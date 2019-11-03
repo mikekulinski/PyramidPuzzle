@@ -169,6 +169,8 @@ class Game(InstructionGroup):
 
 from common.button import Button
 
+from common.button import Button
+
 
 class MainWidget(BaseWidget):
     def __init__(self):
