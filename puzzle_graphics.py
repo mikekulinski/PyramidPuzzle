@@ -40,6 +40,23 @@ staff_mappings = dict()
 # when receiving instructions from controller, change note object and graphics
 
 
+class MainWidget(BaseWidget):
+    def __init__(self):
+        super().__init__()
+        self.music_puzzle = MusicPuzzle()
+        self.canvas.add(self.music_puzzle)
+
+    def on_update(self):
+        self.music_puzzle.on_update()
+
+    def on_key_down(self, keycode, modifiers):
+        # trigger a note to play with keys 1-8
+
+        if keycode[1] == "p":
+            # move now bar across music bar
+            self.music_puzzle.play()
+
+
 class MusicPuzzle(InstructionGroup):
     def __init__(self):
         super().__init__()
@@ -57,11 +74,11 @@ class MusicPuzzle(InstructionGroup):
         self.animations.on_update()
         self.audio.on_update()
 
-    def on_layout(self, win_size):
-        pass
-
     def play(self):
         self.music_bar.play()
+
+    def on_layout(self, win_size):
+        pass
 
 
 class MusicBar(InstructionGroup):
@@ -137,6 +154,8 @@ class MusicBar(InstructionGroup):
                 self.now_bar_moving = False
                 pos = self.now_bar_pos.eval(self.time)
                 self.now_bar.points = (pos, self.height, pos, Window.height)
+
+        return
 
 
 if __name__ == "__main__":
