@@ -63,7 +63,7 @@ class MusicPuzzle(InstructionGroup):
     def __init__(self):
         super().__init__()
         self.animations = AnimGroup()
-        self.music_bar = MusicBar(notes)
+        self.music_bar = MusicBar(notes, user_notes)
         self.animations.add(self.music_bar)
         self.add(self.animations)
 
@@ -148,17 +148,12 @@ class MusicBar(InstructionGroup):
                 n_val = semitones[pitch % 12] + str(int(pitch / 12) - 1)
                 height = self.staff_mappings[n_val] if n_val in self.staff_mappings else self.height
                 x_pos = x_start + (measure_beats) * (x_end - x_start)
-                self.add(Ellipse(size = (45,self.staff_lines_height), pos = (x_pos, height)))
                 if n_val == 'C4': #ledger line
                     self.add(Line(points=(x_pos - 15, height + self.staff_lines_height/2.0, x_pos + 45 + 15, height + self.staff_lines_height/2.0)))
-                duration, pitch = self.actual_notes[note_index]
                 self.add(
                     Ellipse(
-                        size=(50, 50),
-                        pos=(
-                            x_start + (measure_beats) * (x_end - x_start),
-                            self.height,
-                        ),
+                        size=(45, self.staff_lines_height),
+                        pos=(x_pos, height),
                     )
                 )
                 measure_beats += duration
