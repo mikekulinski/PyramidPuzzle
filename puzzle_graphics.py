@@ -1,5 +1,6 @@
 import sys
-sys.path.append('..')
+
+sys.path.append("..")
 from common.core import BaseWidget, run, lookup
 from common.gfxutil import topleft_label, CEllipse, KFAnim, AnimGroup, CRectangle
 
@@ -19,45 +20,72 @@ from kivy.graphics import PushMatrix, PopMatrix, Translate, Scale, Rotate
 from random import randint, random
 import numpy as np
 
-notes = ((.25, 60), (.25, 62), (.25, 64), (.25, 65), (.25, 67), (.25, 69), (.25, 71), (.25, 72), )
+notes = (
+    (0.25, 60),
+    (0.25, 72),
+    (0.25, 71),
+    (0.25, 67),
+    (0.25, 69),
+    (0.25, 71),
+    (0.25, 0),
+    (0.25, 72),
+)
 user_notes = [(n[0],n[1] + 3) for n in notes] 
 notes_w_staff_lines = ['E4', 'G4', 'B4', 'D5', 'F5']
 names = "CDEFGAB"
 all_notes = [n + '4' for n in names]
 all_notes.extend([n + '5' for n in 'CDEF'])
 semitones = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', "A#", 'B']
-ledger_lines = ['C4']
 
-#will have access to note+octave, C4 = 0
-#put music bar in instruction group for mike to use
-#when receiving instructions from controller, change note object and graphics
+# will have access to note+octave, C4 = 0
+# put music bar in instruction group for mike to use
+# when receiving instructions from controller, change note object and graphics
 
-class MainWidget(BaseWidget) :
+
+class MainWidget(BaseWidget):
     def __init__(self):
-        super(MainWidget, self).__init__()
-        self.objects = AnimGroup()
-        self.music_bar = MusicBar(notes, user_notes)
-        self.objects.add(self.music_bar)
-        self.canvas.add(self.objects)
+        super().__init__()
+        self.music_puzzle = MusicPuzzle()
+        self.canvas.add(self.music_puzzle)
+
+    def on_update(self):
+        self.music_puzzle.on_update()
+
+    def on_key_down(self, keycode, modifiers):
+        # trigger a note to play with keys 1-8
+
+        if keycode[1] == "p":
+            # move now bar across music bar
+            self.music_puzzle.play()
+
+
+class MusicPuzzle(InstructionGroup):
+    def __init__(self):
+        super().__init__()
+        self.animations = AnimGroup()
+        self.music_bar = MusicBar(notes)
+        self.animations.add(self.music_bar)
+        self.add(self.animations)
+
         self.audio = Audio(2)
         self.mixer = Mixer()
         self.mixer.set_gain(0.2)
         self.audio.set_generator(self.mixer)
 
-    def on_key_down(self, keycode, modifiers):
-        # trigger a note to play with keys 1-8
-
-        if keycode[1] == 'p':
-            #move now bar across music bar
-            self.music_bar.play()
-
     def on_update(self):
-        self.objects.on_update()
+        self.animations.on_update()
         self.audio.on_update()
+
+    def play(self):
+        self.music_bar.play()
+
+    def on_layout(self, win_size):
+        pass
+
 
 class MusicBar(InstructionGroup):
     def __init__(self, actual_notes, user_notes):
-        super(MusicBar, self).__init__()
+        super().__init__()
 
         self.height = Window.height * 3 / 4
         self.staff_lines_height = (Window.height / 4) * (2/3) / 5
@@ -65,6 +93,7 @@ class MusicBar(InstructionGroup):
         self.staff_h = self.middle_c_h + self.staff_lines_height
 
         self.notes_start = 120
+
         self.now_bar = Line(points=(self.notes_start, self.height, self.notes_start, Window.height))
         self.now_bar_pos = KFAnim((0, self.notes_start), (3, Window.width))
         self.border = Line(points=(0, self.height, Window.width, self.height))
@@ -90,7 +119,11 @@ class MusicBar(InstructionGroup):
         self.add(self.border)
         for line in self.staff_lines:
             self.add(line)
-        self.clef = Rectangle(source='treble_clef_white.png', pos=(30, self.height + self.middle_c_h), size=(70, self.height / 4.5))
+        self.clef = Rectangle(
+            source="treble_clef_white.png",
+            pos=(30, self.height + self.middle_c_h),
+            size=(70, self.height / 4.5),
+        )
         self.add(self.clef)
         self.time = 0
         self.now_bar_moving = False
@@ -104,12 +137,12 @@ class MusicBar(InstructionGroup):
             self.add(Color(a=.5))
         num_measures = int(sum(note[0] for note in notes_to_place))
         note_index = 0
-        #place all measure lines
+        # place all measure lines
         x_start = self.notes_start
         for i in range(num_measures):
             measure = []
             measure_beats = 0
-            x_end = self.notes_start + self.notes_width * (i+1) / num_measures
+            x_end = self.notes_start + self.notes_width * (i + 1) / num_measures
             while measure_beats < 1:
                 duration, pitch = notes_to_place[note_index]
                 n_val = semitones[pitch % 12] + str(int(pitch / 12) - 1)
@@ -118,6 +151,16 @@ class MusicBar(InstructionGroup):
                 self.add(Ellipse(size = (45,self.staff_lines_height), pos = (x_pos, height)))
                 if n_val == 'C4': #ledger line
                     self.add(Line(points=(x_pos - 15, height + self.staff_lines_height/2.0, x_pos + 45 + 15, height + self.staff_lines_height/2.0)))
+                duration, pitch = self.actual_notes[note_index]
+                self.add(
+                    Ellipse(
+                        size=(50, 50),
+                        pos=(
+                            x_start + (measure_beats) * (x_end - x_start),
+                            self.height,
+                        ),
+                    )
+                )
                 measure_beats += duration
                 note_index += 1
             self.add(Line(points=(x_end, self.height + self.staff_h, x_end, Window.height - self.middle_c_h)))
@@ -135,7 +178,6 @@ class MusicBar(InstructionGroup):
                 self.now_bar.points = (pos, self.height, pos, Window.height)
 
         return
-
 
 
 if __name__ == "__main__":
