@@ -167,6 +167,9 @@ class Game(InstructionGroup):
         self.character.on_layout(win_size)
 
 
+from common.button import Button
+
+
 class MainWidget(BaseWidget):
     def __init__(self):
         super().__init__()
@@ -185,14 +188,7 @@ class MainWidget(BaseWidget):
 
     def on_update(self):
         eventlist = pygame.event.get()
-
         for e in eventlist:
-            if e.type == QUIT:
-                return
-
-            # if e.type == pygame.locals.JOYAXISMOTION:
-            #     x, y = self.joystick.get_axis(0), self.joystick.get_axis(1)
-            #     print("axis x:" + str(x) + " axis y:" + str(y))
             if e.type == pygame.locals.JOYHATMOTION:
                 x, y = self.joystick.get_hat(0)
 
@@ -202,10 +198,13 @@ class MainWidget(BaseWidget):
                 self.game.character.move_player(new_location)
                 print("hat x:" + str(x) + " hat y:" + str(y))
 
-            # elif e.type == pygame.locals.JOYBUTTONDOWN:
-            #     print("button down:" + str(e.button))
-            # elif e.type == pygame.locals.JOYBUTTONUP:
-            #     print("button up:" + str(e.button))
+            elif e.type == pygame.locals.JOYBUTTONDOWN:
+                print("button down:" + str(e.button))
+                button = Button(e.button)
+                if button == Button.Y:
+                    self.puzzle.play()
+            elif e.type == pygame.locals.JOYBUTTONUP:
+                print("button up:" + str(e.button))
 
         self.label.text = "Started Kivy"
 
