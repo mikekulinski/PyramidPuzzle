@@ -30,6 +30,11 @@ from character_movement import Game
 from puzzle_graphics import MusicPuzzle
 
 
+from common.button import Button
+
+from common.button import Button
+
+
 class MainWidget(BaseWidget):
     def __init__(self):
         super().__init__()
@@ -53,11 +58,7 @@ class MainWidget(BaseWidget):
         self.puzzle.on_update()
 
         eventlist = pygame.event.get()
-
         for e in eventlist:
-            if e.type == QUIT:
-                return
-
             if e.type == pygame.locals.JOYHATMOTION:
                 x, y = self.joystick.get_hat(0)
 
@@ -69,7 +70,8 @@ class MainWidget(BaseWidget):
 
             elif e.type == pygame.locals.JOYBUTTONDOWN:
                 print("button down:" + str(e.button))
-                if e.button == 2:
+                button = Button(e.button)
+                if button == Button.Y:
                     self.puzzle.play()
             elif e.type == pygame.locals.JOYBUTTONUP:
                 print("button up:" + str(e.button))
