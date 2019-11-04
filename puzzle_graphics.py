@@ -9,6 +9,7 @@ from common.mixer import Mixer
 from common.note import NoteGenerator, Envelope
 from common.wavegen import WaveGenerator, SpeedModulator
 from common.wavesrc import WaveBuffer, WaveFile, make_wave_buffers
+from common.synth import Synth
 
 from kivy.core.window import Window
 from kivy.clock import Clock as kivyClock
@@ -16,7 +17,8 @@ from kivy.uix.label import Label
 from kivy.graphics.instructions import InstructionGroup
 from kivy.graphics import Color, Ellipse, Rectangle, Line
 from kivy.graphics import PushMatrix, PopMatrix, Translate, Scale, Rotate
-from PuzzleSound import Note
+from PuzzleSound import Note, PuzzleSound
+from common.clock import Clock, SimpleTempoMap, AudioScheduler, tick_str, kTicksPerQuarter, quantize_tick_up
 
 from random import randint, random
 import numpy as np
@@ -56,7 +58,9 @@ class MainWidget(BaseWidget):
 
         if keycode[1] == "p":
             # move now bar across music bar
-            self.music_puzzle.play()
+            self.music_puzzle.play(actual=True)
+        if keycode[1] == "q":
+            self.music_puzzle.play(actual=False)
 
         if keycode[1] == "t":
             # move now bar across music bar
@@ -76,16 +80,26 @@ class MusicPuzzle(InstructionGroup):
         self.add(self.animations)
 
         self.audio = Audio(2)
-        self.mixer = Mixer()
-        self.mixer.set_gain(0.2)
-        self.audio.set_generator(self.mixer)
+        self.synth = Synth('../data/FluidR3_GM.sf2')
+
+        self.tempo_map  = SimpleTempoMap(120)
+        self.sched = AudioScheduler(self.tempo_map)
+
+        self.sched.set_generator(self.synth)
+        self.audio.set_generator(self.sched)
+        self.actual_sound = PuzzleSound(notes, self.sched, self.synth)
+        self.user_sound = PuzzleSound(user_notes, self.sched, self.synth)
 
     def on_update(self):
         self.animations.on_update()
         self.audio.on_update()
 
-    def play(self):
+    def play(self, actual=False):
         self.music_bar.play()
+        if actual:
+            self.actual_sound.toggle()
+        else:
+            self.user_sound.toggle()
 
     def on_layout(self, win_size):
         self.music_bar.on_layout(win_size)
@@ -122,8 +136,9 @@ class MusicBar(InstructionGroup):
         self.now_bar_moving = False
 
     def render_elements(self):
+        t = sum(note.get_dur() for note in self.actual_notes) / 960
         self.now_bar = Line(points=(self.notes_start, self.height, self.notes_start, self.win_size[1]))
-        self.now_bar_pos = KFAnim((0, self.notes_start), (3, self.win_size[0]))
+        self.now_bar_pos = KFAnim((0, self.notes_start), (t, self.win_size[0]))
         self.border = Line(points=(0, self.height, self.win_size[0], self.height))
         
         #loop thru all notes and map positions to them--only draw lines for certain ones
