@@ -78,8 +78,6 @@ class Character(InstructionGroup):
         self.add(self.sprite)
 
     def on_layout(self, win_size):
-        self.remove(self.sprite)
-
         self.move_player(self.grid_pos)
 
 
@@ -135,7 +133,7 @@ class Game(InstructionGroup):
         tile_size = (tile_side_len, tile_side_len)
 
         self.pos = (
-            int(win_size[0] / 2 - grid_side_len / 2),
+            int((win_size[0] / 2) - grid_side_len / 2),
             int(win_size[1] / 2 - grid_side_len / 2),
         )
 
