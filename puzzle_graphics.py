@@ -114,7 +114,6 @@ class MusicPuzzle(InstructionGroup):
         self.music_bar.on_layout(win_size)
 
     def on_up_arrow(self):
-        print("Called on up arrow")
         for note in user_notes:
             pitch = note.get_pitch()
             note.set_note(pitch + 1)

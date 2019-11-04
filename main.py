@@ -95,7 +95,6 @@ class MainWidget(BaseWidget):
         self.puzzle.on_layout((win_size))
 
     def start_puzzle(self):
-        print("This was called")
         self.state = "PUZZLE"
 
 

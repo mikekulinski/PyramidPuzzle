@@ -47,7 +47,6 @@ class Character(InstructionGroup):
         self.add(self.sprite)
 
         self.move_player((FLOOR_SIZE // 2, FLOOR_SIZE // 2))
-        print(self.grid_pos)
 
     def get_valid_pos(self, grid_pos):
         new_pos = list(grid_pos)
@@ -66,8 +65,6 @@ class Character(InstructionGroup):
 
     def move_player(self, grid_pos):
         new_pos = self.get_valid_pos(grid_pos)
-        if new_pos == self.grid_pos:
-            return
 
         if self.current_tile.is_switch and self.current_tile.is_active:
             old_tile.deactivate()
@@ -78,7 +75,6 @@ class Character(InstructionGroup):
         self.current_tile = self.game.tiles[self.grid_pos[0]][self.grid_pos[1]]
         tile_size = self.current_tile.size
         self.pixel_pos = self.current_tile.pos + (tile_size // 2) + self.game.pos
-        print(self.pixel_pos)
 
         self.size = tile_size // 3
 
