@@ -16,26 +16,26 @@ from kivy.uix.label import Label
 from kivy.graphics.instructions import InstructionGroup
 from kivy.graphics import Color, Ellipse, Rectangle, Line
 from kivy.graphics import PushMatrix, PopMatrix, Translate, Scale, Rotate
+from PuzzleSound import Note
 
 from random import randint, random
 import numpy as np
 
 notes = (
-    (0.25, 60),
-    (0.25, 62),
-    (0.25, 64),
-    (0.25, 65),
-    (0.25, 67),
-    (0.25, 69),
-    (0.25, 71),
-    (0.25, 72),
+    Note(480, 60),
+    Note(480, 62),
+    Note(480, 64),
+    Note(480, 65),
+    Note(480, 67),
+    Note(480, 69),
+    Note(480, 71),
+    Note(480, 72),
 )
-user_notes = [(n[0],n[1] + 3) for n in notes] 
+user_notes = [Note(n.get_dur(),n.get_pitch() + 3) for n in notes] 
 notes_w_staff_lines = ['E4', 'G4', 'B4', 'D5', 'F5']
 names = "CDEFGAB"
 all_notes = [n + '4' for n in names]
 all_notes.extend([n + '5' for n in 'CDEF'])
-semitones = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', "A#", 'B']
 
 # will have access to note+octave, C4 = 0
 # put music bar in instruction group for mike to use
@@ -57,6 +57,14 @@ class MainWidget(BaseWidget):
         if keycode[1] == "p":
             # move now bar across music bar
             self.music_puzzle.play()
+
+        if keycode[1] == "t":
+            # move now bar across music bar
+            self.music_puzzle.on_up_arrow()
+
+        if keycode[1] == "g":
+            # move now bar across music bar
+            self.music_puzzle.on_down_arrow()
 
 
 class MusicPuzzle(InstructionGroup):
@@ -82,6 +90,16 @@ class MusicPuzzle(InstructionGroup):
     def on_layout(self, win_size):
         self.music_bar.on_layout(win_size)
 
+    def on_up_arrow(self):
+        for note in user_notes:
+            pitch = note.get_pitch()
+            note.set_note(pitch+1)
+
+    def on_down_arrow(self):
+        for note in user_notes:
+            pitch = note.get_pitch()
+            note.set_note(pitch-1)
+
 
 class MusicBar(InstructionGroup):
     def __init__(self, actual_notes, user_notes):
@@ -100,7 +118,6 @@ class MusicBar(InstructionGroup):
 
         self.render_elements()
 
-        self.user_note_instructions = set()
         self.time = 0
         self.now_bar_moving = False
 
@@ -143,7 +160,7 @@ class MusicBar(InstructionGroup):
             self.add(Color(a=.5))
             self.user_note_instructions = set()
 
-        num_measures = int(sum(note[0] for note in notes_to_place))
+        num_measures = int(sum(note.get_dur()/480/4 for note in notes_to_place))
         note_index = 0
         # place all measure lines
         x_start = self.notes_start
@@ -152,8 +169,9 @@ class MusicBar(InstructionGroup):
             measure_beats = 0
             x_end = self.notes_start + self.notes_width * (i + 1) / num_measures
             while measure_beats < 1:
-                duration, pitch = notes_to_place[note_index]
-                n_val = semitones[pitch % 12] + str(int(pitch / 12) - 1)
+                duration = notes_to_place[note_index].get_dur() / 480 / 4
+                pitch = notes_to_place[note_index].get_pitch()
+                n_val = notes_to_place[note_index].get_letter()
                 if len(n_val) == 3:
                     n_val = n_val[0::2]
                 height = self.staff_mappings[n_val] if n_val in self.staff_mappings else self.height
