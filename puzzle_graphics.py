@@ -98,7 +98,7 @@ class MusicBar(InstructionGroup):
         self.notes_start = self.win_size[0]/10
         self.notes_width = self.win_size[0] - self.notes_start
 
-        render_elements()
+        self.render_elements()
 
         self.user_note_instructions = set()
         self.time = 0
@@ -169,14 +169,13 @@ class MusicBar(InstructionGroup):
                     )
                 self.add(note_obj)
                 if not actual:
-                    user_note_instructions.add(note_obj)
-                    if ledger:
-                        user_note_instructions.add(ledger)
+                    self.user_note_instructions.add(note_obj)
+                    if n_val == 'C4':
+                        self.user_note_instructions.add(ledger)
                 measure_beats += duration
                 note_index += 1
             self.add(Line(points=(x_end, self.height + self.staff_h, x_end, self.win_size[1] - self.middle_c_h)))
             x_start = x_end
-            self.add(Color(a=1))
 
     def on_update(self, dt):
         if self.now_bar_moving:
@@ -190,7 +189,7 @@ class MusicBar(InstructionGroup):
                 self.now_bar.points = (pos, self.height, pos, self.win_size[1])
         for ins in self.user_note_instructions:
             self.remove(ins)
-        place_notes(actual=False)
+        self.place_notes(actual=False)
 
         return
 
