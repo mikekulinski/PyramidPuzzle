@@ -3,3 +3,5 @@ __pycache__/
 
 # Midi sound bank
 data/FluidR3_GM.sf2
+
+**.pyc

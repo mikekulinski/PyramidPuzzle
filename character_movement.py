@@ -63,7 +63,6 @@ class Character(InstructionGroup):
         self.grid_pos = tuple(new_pos)
 
     def move_player(self, grid_pos):
-        self.remove(self.sprite)
         self.set_valid_pos(grid_pos)
 
         current_tile = self.game.tiles[self.grid_pos[0]][self.grid_pos[1]]
@@ -78,8 +77,7 @@ class Character(InstructionGroup):
         self.add(self.sprite)
 
     def on_layout(self, win_size):
-        self.remove(self.sprite)
-
+        self.clear()
         self.move_player(self.grid_pos)
 
 
@@ -135,7 +133,7 @@ class Game(InstructionGroup):
         tile_size = (tile_side_len, tile_side_len)
 
         self.pos = (
-            int(win_size[0] / 2 - grid_side_len / 2),
+            int((win_size[0] / 2) - grid_side_len / 2),
             int(win_size[1] / 2 - grid_side_len / 2),
         )
 
@@ -157,11 +155,7 @@ class Game(InstructionGroup):
         self.add(PopMatrix())
 
     def on_layout(self, win_size):
-
-        # Remove all old tiles
-        for row in self.tiles:
-            for tile in row:
-                self.remove(tile)
+        self.clear()
 
         self.create_grid(win_size)
         self.character.on_layout(win_size)
