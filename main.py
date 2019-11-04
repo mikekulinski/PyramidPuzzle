@@ -47,8 +47,10 @@ class MainWidget(BaseWidget):
         self.puzzle = MusicPuzzle()
         self.canvas.add(self.puzzle)
 
-        self.game = Game()
+        self.game = Game(self.start_puzzle)
         self.canvas.add(self.game)
+
+        self.state = "MOVEMENT"
 
     def on_update(self):
         self.puzzle.on_update()
@@ -57,31 +59,38 @@ class MainWidget(BaseWidget):
         for e in eventlist:
             if e.type == pygame.locals.JOYHATMOTION:
                 x, y = self.joystick.get_hat(0)
+                if self.state == "MOVEMENT":
+                    cur_location = self.game.character.grid_pos
+                    # Must subtract y because in 2d array, up is -1, but for controller up is +1
+                    new_location = (cur_location[0] + y, cur_location[1] + x)
+                    self.game.character.move_player(new_location)
 
-                cur_location = self.game.character.grid_pos
-                # Must subtract y because in 2d array, up is -1, but for controller up is +1
-                new_location = (cur_location[0] + y, cur_location[1] + x)
-                self.game.character.move_player(new_location)
-                print("hat x:" + str(x) + " hat y:" + str(y))
+                elif self.state == "PUZZLE":
+                    try:
+                        print(Button((x, y)))
+                    except:
+                        print("Not a valid button")
 
             elif e.type == pygame.locals.JOYBUTTONDOWN:
-                print("button down:" + str(e.button))
                 button = Button(e.button)
-                if button == Button.Y:
-                    self.puzzle.play()
-            elif e.type == pygame.locals.JOYBUTTONUP:
-                print("button up:" + str(e.button))
+                if self.state == "MOVEMENT":
+                    pass
+                elif self.state == "PUZZLE":
+                    if button == Button.Y:
+                        self.puzzle.play()
+                    elif button == Button.B:
+                        # Exit puzzle play and go back to movement
+                        self.game.character.current_tile.deactivate()
+                        self.state = "MOVEMENT"
 
     # will get called when the window size changes
     def on_layout(self, win_size):
-        self.puzzle_pos = (0, win_size[1] * 0.75)
-
-        self.canvas.add(PushMatrix())
-        self.canvas.add(Translate(*self.puzzle_pos))
-        self.puzzle.on_layout(win_size)
-        self.canvas.add(PopMatrix())
-
         self.game.on_layout((win_size[0], int(win_size[1] * 0.75)))
+        self.puzzle.on_layout((win_size))
+
+    def start_puzzle(self):
+        print("This was called")
+        self.state = "PUZZLE"
 
 
 if __name__ == "__main__":
