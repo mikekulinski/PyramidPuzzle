@@ -22,18 +22,20 @@ import numpy as np
 
 notes = (
     (0.25, 60),
-    (0.25, 72),
-    (0.25, 71),
+    (0.25, 62),
+    (0.25, 64),
+    (0.25, 65),
     (0.25, 67),
     (0.25, 69),
     (0.25, 71),
-    (0.25, 0),
     (0.25, 72),
 )
-pitch_mappings = {60: "C", 62: "D", 64: "E", 65: "F", 67: "G", 69: "A", 71: "B"}
-note_names = "CDEFGAB"
-notes_w_staff_lines = "EGBD"
-staff_mappings = dict()
+user_notes = [(n[0],n[1] + 3) for n in notes] 
+notes_w_staff_lines = ['E4', 'G4', 'B4', 'D5', 'F5']
+names = "CDEFGAB"
+all_notes = [n + '4' for n in names]
+all_notes.extend([n + '5' for n in 'CDEF'])
+semitones = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', "A#", 'B']
 
 # will have access to note+octave, C4 = 0
 # put music bar in instruction group for mike to use
@@ -61,7 +63,7 @@ class MusicPuzzle(InstructionGroup):
     def __init__(self):
         super().__init__()
         self.animations = AnimGroup()
-        self.music_bar = MusicBar(notes)
+        self.music_bar = MusicBar(notes, user_notes)
         self.animations.add(self.music_bar)
         self.add(self.animations)
 
@@ -78,49 +80,94 @@ class MusicPuzzle(InstructionGroup):
         self.music_bar.play()
 
     def on_layout(self, win_size):
-        pass
+        self.music_bar.on_layout(win_size)
 
 
 class MusicBar(InstructionGroup):
-    def __init__(self, notes_list):
+    def __init__(self, actual_notes, user_notes):
         super().__init__()
+        self.win_size = (Window.width, Window.height)
+        self.actual_notes = actual_notes
+        self.user_notes = user_notes
 
-        self.height = Window.height * 3 / 4
-        self.staff_lines_height = (Window.height / 4) / (1.5 * 5)
-        self.h = (Window.height / 4) / 6
+        self.height = self.win_size[1] * 3 / 4
+        self.staff_lines_height = (self.win_size[1] / 4) * (2/3) / 5
+        self.middle_c_h = (self.win_size[1] / 4) / 6
+        self.staff_h = self.middle_c_h + self.staff_lines_height
 
-        self.now_bar = Line(points=(10, self.height, 10, Window.height))
-        self.now_bar_pos = KFAnim((0, 10), (3, Window.width))
-        self.border = Line(points=(0, self.height, Window.width, self.height))
-        self.actual_notes = notes_list
-        self.notes_width = Window.width - 120
-        self.notes_start = 120
-        self.place_notes()
-        # loop thru all notes and map positions to them--only draw lines for certain ones
+        self.notes_start = self.win_size[0]/10
+
+        self.now_bar = Line(points=(self.notes_start, self.height, self.notes_start, self.win_size[1]))
+        self.now_bar_pos = KFAnim((0, self.notes_start), (3, self.win_size[0]))
+        self.border = Line(points=(0, self.height, self.win_size[0], self.height))
+
+        self.notes_width = self.win_size[0] - self.notes_start
+        
+        #loop thru all notes and map positions to them--only draw lines for certain ones
         self.staff_lines = []
-        for i in range(6):
-            height = self.height + self.h + self.staff_lines_height * i
-            self.staff_lines.append(Line(points=(0, height, Window.width, height)))
-            staff_mappings
+        self.staff_mappings = dict()
 
+        for i in range(len(all_notes)):
+            height = self.height + self.middle_c_h + self.staff_lines_height * i / 2.0
+            if all_notes[i] in notes_w_staff_lines:
+                self.staff_lines.append(Line(points=(0, height, self.win_size[0], height)))
+            self.staff_mappings[all_notes[i]] = height - self.staff_lines_height / 2.0
+
+        self.place_notes(actual=True)
+        self.place_notes(actual=False)
+        self.add(Color(a=1))
+        
         self.add(self.now_bar)
         self.add(self.border)
         for line in self.staff_lines:
             self.add(line)
         self.clef = Rectangle(
             source="treble_clef_white.png",
-            pos=(30, self.height),
-            size=(70, self.height / 3.75),
+            pos=(30, self.height + self.middle_c_h),
+            size=(70, self.height / 4.5),
         )
+        print(self.win_size)
         self.add(self.clef)
         self.time = 0
         self.now_bar_moving = False
 
+    def render_elements(self):
+        self.now_bar = Line(points=(self.notes_start, self.height, self.notes_start, self.win_size[1]))
+        self.now_bar_pos = KFAnim((0, self.notes_start), (3, self.win_size[0]))
+        self.border = Line(points=(0, self.height, self.win_size[0], self.height))
+        
+        #loop thru all notes and map positions to them--only draw lines for certain ones
+        self.staff_lines = []
+        self.staff_mappings = dict()
+
+        for i in range(len(all_notes)):
+            height = self.height + self.middle_c_h + self.staff_lines_height * i / 2.0
+            if all_notes[i] in notes_w_staff_lines:
+                self.staff_lines.append(Line(points=(0, height, self.win_size[0], height)))
+
+        self.place_notes(actual=True)
+        self.place_notes(actual=False)
+        self.add(Color(a=1))
+        
+        self.add(self.now_bar)
+        self.add(self.border)
+        for line in self.staff_lines:
+            self.add(line)
+        self.clef = Rectangle(
+            source="treble_clef_white.png",
+            pos=(self.win_size[0] / 50, self.height + self.middle_c_h),
+            size=(self.win_size[0] / 22, self.height / 4.5),
+        )
+        self.add(self.clef)
+
     def play(self):
         self.now_bar_moving = True
 
-    def place_notes(self):
-        num_measures = int(sum(note[0] for note in self.actual_notes))
+    def place_notes(self, actual=True):
+        notes_to_place = self.actual_notes if actual else self.user_notes
+        if not actual:
+            self.add(Color(a=.5))
+        num_measures = int(sum(note[0] for note in notes_to_place))
         note_index = 0
         # place all measure lines
         x_start = self.notes_start
@@ -129,33 +176,42 @@ class MusicBar(InstructionGroup):
             measure_beats = 0
             x_end = self.notes_start + self.notes_width * (i + 1) / num_measures
             while measure_beats < 1:
-                duration, pitch = self.actual_notes[note_index]
+                duration, pitch = notes_to_place[note_index]
+                n_val = semitones[pitch % 12] + str(int(pitch / 12) - 1)
+                if len(n_val) == 3:
+                    n_val = n_val[0::2]
+                height = self.staff_mappings[n_val] if n_val in self.staff_mappings else self.height
+                x_pos = x_start + (measure_beats) * (x_end - x_start)
+                if n_val == 'C4': #ledger line
+                    ledger_width = 15
+                    self.add(Line(points=(x_pos - ledger_width, height + self.staff_lines_height/2.0, x_pos + self.staff_lines_height + ledger_width, height + self.staff_lines_height/2.0)))
                 self.add(
                     Ellipse(
-                        size=(50, 50),
-                        pos=(
-                            x_start + (measure_beats) * (x_end - x_start),
-                            self.height,
-                        ),
+                        size=(self.staff_lines_height, self.staff_lines_height),
+                        pos=(x_pos, height),
                     )
                 )
                 measure_beats += duration
                 note_index += 1
-            self.add(Line(points=(x_end, self.height, x_end, Window.height)))
+            self.add(Line(points=(x_end, self.height + self.staff_h, x_end, self.win_size[1] - self.middle_c_h)))
             x_start = x_end
 
     def on_update(self, dt):
         if self.now_bar_moving:
             pos = self.now_bar_pos.eval(self.time)
-            self.now_bar.points = (pos, self.height, pos, Window.height)
+            self.now_bar.points = (pos, self.height, pos, self.win_size[1])
             self.time += dt
-            if pos == Window.width:
+            if pos == self.win_size[0]:
                 self.time = 0
                 self.now_bar_moving = False
                 pos = self.now_bar_pos.eval(self.time)
-                self.now_bar.points = (pos, self.height, pos, Window.height)
+                self.now_bar.points = (pos, self.height, pos, self.win_size[1])
 
         return
+
+    def on_layout(self, win_size):
+        self.win_size = win_size
+        render_elements()
 
 
 if __name__ == "__main__":
