@@ -18,7 +18,14 @@ from kivy.graphics.instructions import InstructionGroup
 from kivy.graphics import Color, Ellipse, Rectangle, Line
 from kivy.graphics import PushMatrix, PopMatrix, Translate, Scale, Rotate
 from PuzzleSound import Note, PuzzleSound
-from common.clock import Clock, SimpleTempoMap, AudioScheduler, tick_str, kTicksPerQuarter, quantize_tick_up
+from common.clock import (
+    Clock,
+    SimpleTempoMap,
+    AudioScheduler,
+    tick_str,
+    kTicksPerQuarter,
+    quantize_tick_up,
+)
 
 from random import randint, random
 import numpy as np
@@ -34,11 +41,11 @@ notes = (
     Note(480, 72),
 )
 
-user_notes = [Note(n.get_dur(),n.get_pitch() + 3) for n in notes] 
-notes_w_staff_lines = ['E4', 'G4', 'B4', 'D5', 'F5']
+user_notes = [Note(n.get_dur(), n.get_pitch() + 3) for n in notes]
+notes_w_staff_lines = ["E4", "G4", "B4", "D5", "F5"]
 names = "CDEFGAB"
-all_notes = [n + '4' for n in names]
-all_notes.extend([n + '5' for n in 'CDEF'])
+all_notes = [n + "4" for n in names]
+all_notes.extend([n + "5" for n in "CDEF"])
 
 
 # will have access to note+octave, C4 = 0
@@ -82,9 +89,9 @@ class MusicPuzzle(InstructionGroup):
         self.add(self.animations)
 
         self.audio = Audio(2)
-        self.synth = Synth('../data/FluidR3_GM.sf2')
+        self.synth = Synth("./data/FluidR3_GM.sf2")
 
-        self.tempo_map  = SimpleTempoMap(120)
+        self.tempo_map = SimpleTempoMap(120)
         self.sched = AudioScheduler(self.tempo_map)
 
         self.sched.set_generator(self.synth)
@@ -107,14 +114,15 @@ class MusicPuzzle(InstructionGroup):
         self.music_bar.on_layout(win_size)
 
     def on_up_arrow(self):
+        print("Called on up arrow")
         for note in user_notes:
             pitch = note.get_pitch()
-            note.set_note(pitch+1)
+            note.set_note(pitch + 1)
 
     def on_down_arrow(self):
         for note in user_notes:
             pitch = note.get_pitch()
-            note.set_note(pitch-1)
+            note.set_note(pitch - 1)
 
 
 class MusicBar(InstructionGroup):
@@ -135,22 +143,17 @@ class MusicBar(InstructionGroup):
         self.middle_c_h = (self.win_size[1] / 4) / 6
         self.staff_h = self.middle_c_h + self.staff_lines_height
 
-
-        self.notes_start = self.win_size[0]/10
+        self.notes_start = self.win_size[0] / 10
         self.notes_width = self.win_size[0] - self.notes_start
 
-        self.render_elements()
-
-        self.time = 0
-        self.now_bar_moving = False
-
-    def render_elements(self):
         t = sum(note.get_dur() for note in self.actual_notes) / 960
-        self.now_bar = Line(points=(self.notes_start, self.height, self.notes_start, self.win_size[1]))
+        self.now_bar = Line(
+            points=(self.notes_start, self.height, self.notes_start, self.win_size[1])
+        )
         self.now_bar_pos = KFAnim((0, self.notes_start), (t, self.win_size[0]))
         self.border = Line(points=(0, self.height, self.win_size[0], self.height))
-        
-        #loop thru all notes and map positions to them--only draw lines for certain ones
+
+        # loop thru all notes and map positions to them--only draw lines for certain ones
 
         self.staff_lines = []
         self.staff_mappings = dict()
@@ -159,7 +162,9 @@ class MusicBar(InstructionGroup):
             height = self.height + self.middle_c_h + self.staff_lines_height * i / 2.0
             if all_notes[i] in notes_w_staff_lines:
 
-                self.staff_lines.append(Line(points=(0, height, self.win_size[0], height)))
+                self.staff_lines.append(
+                    Line(points=(0, height, self.win_size[0], height))
+                )
             self.staff_mappings[all_notes[i]] = height - self.staff_lines_height / 2.0
 
         self.place_notes(actual=True)
@@ -183,10 +188,10 @@ class MusicBar(InstructionGroup):
     def place_notes(self, actual=True):
         notes_to_place = self.actual_notes if actual else self.user_notes
         if not actual:
-            self.add(Color(a=.5))
+            self.add(Color(a=0.5))
             self.user_note_instructions = set()
 
-        num_measures = int(sum(note.get_dur()/480/4 for note in notes_to_place))
+        num_measures = int(sum(note.get_dur() / 480 / 4 for note in notes_to_place))
         note_index = 0
         # place all measure lines
         x_start = self.notes_start
@@ -208,24 +213,24 @@ class MusicBar(InstructionGroup):
                 x_pos = x_start + (measure_beats) * (x_end - x_start)
                 if n_val == "C4":  # ledger line
                     ledger_width = 15
-                    ledger_height = height + self.staff_lines_height/2.0
+                    ledger_height = height + self.staff_lines_height / 2.0
                     ledger = Line(
-                              points=(
-                                x_pos - ledger_width,
-                                ledger_height,
-                                x_pos + self.staff_lines_height + ledger_width,
-                                ledger_height
-                              )
+                        points=(
+                            x_pos - ledger_width,
+                            ledger_height,
+                            x_pos + self.staff_lines_height + ledger_width,
+                            ledger_height,
+                        )
                     )
                     self.add(ledger)
                 note_obj = Ellipse(
-                        size=(self.staff_lines_height, self.staff_lines_height),
-                        pos=(x_pos, height),
-                    )
+                    size=(self.staff_lines_height, self.staff_lines_height),
+                    pos=(x_pos, height),
+                )
                 self.add(note_obj)
                 if not actual:
                     self.user_note_instructions.add(note_obj)
-                    if n_val == 'C4':
+                    if n_val == "C4":
                         self.user_note_instructions.add(ledger)
                 measure_beats += duration
                 note_index += 1

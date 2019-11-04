@@ -67,9 +67,13 @@ class MainWidget(BaseWidget):
 
                 elif self.state == "PUZZLE":
                     try:
-                        print(Button((x, y)))
+                        button = Button((x, y))
+                        if button == Button.UP:
+                            self.puzzle.on_up_arrow()
+                        elif button == Button.DOWN:
+                            self.puzzle.on_down_arrow()
                     except:
-                        print("Not a valid button")
+                        pass
 
             elif e.type == pygame.locals.JOYBUTTONDOWN:
                 button = Button(e.button)
@@ -77,7 +81,9 @@ class MainWidget(BaseWidget):
                     pass
                 elif self.state == "PUZZLE":
                     if button == Button.Y:
-                        self.puzzle.play()
+                        self.puzzle.play(actual=True)
+                    elif button == Button.X:
+                        self.puzzle.play(actual=False)
                     elif button == Button.B:
                         # Exit puzzle play and go back to movement
                         self.game.character.current_tile.deactivate()
