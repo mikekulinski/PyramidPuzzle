@@ -77,7 +77,7 @@ class MainWidget(BaseWidget):
         self.puzzle_pos = (0, win_size[1] * 0.75)
 
         self.canvas.add(PushMatrix())
-        self.canvas.add(Translate(*self.game_pos))
+        self.canvas.add(Translate(*self.puzzle_pos))
         self.puzzle.on_layout(win_size)
         self.canvas.add(PopMatrix())
 
