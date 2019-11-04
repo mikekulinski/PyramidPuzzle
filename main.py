@@ -14,6 +14,8 @@ from common.gfxutil import (
     CRectangle,
 )
 
+from kivy.graphics import Translate, PushMatrix, PopMatrix
+
 from common.synth import Synth
 from common.audio import Audio
 
@@ -29,9 +31,6 @@ import time
 from character_movement import Game
 from puzzle_graphics import MusicPuzzle
 
-
-from common.button import Button
-
 from common.button import Button
 
 
@@ -44,10 +43,7 @@ class MainWidget(BaseWidget):
         self.joystick.init()
         pygame.init()
 
-        # Init kivy widget and graphics
-        self.label = topleft_label()
-        self.add_widget(self.label)
-
+        self.puzzle_pos = (0, Window.height * 0.75)
         self.puzzle = MusicPuzzle()
         self.canvas.add(self.puzzle)
 
@@ -76,13 +72,16 @@ class MainWidget(BaseWidget):
             elif e.type == pygame.locals.JOYBUTTONUP:
                 print("button up:" + str(e.button))
 
-        self.label.text = "Started Kivy"
-
     # will get called when the window size changes
     def on_layout(self, win_size):
-        resize_topleft_label(self.label)
-        self.game.on_layout(win_size)
+        self.puzzle_pos = (0, win_size[1] * 0.75)
+
+        self.canvas.add(PushMatrix())
+        self.canvas.add(Translate(*self.puzzle_pos))
         self.puzzle.on_layout(win_size)
+        self.canvas.add(PopMatrix())
+
+        self.game.on_layout((win_size[0], int(win_size[1] * 0.75)))
 
 
 if __name__ == "__main__":
