@@ -47,7 +47,7 @@ class MainWidget(BaseWidget):
         self.puzzle = MusicPuzzle()
         self.canvas.add(self.puzzle)
 
-        self.game = Game(self.start_puzzle)
+        self.game = Game(self.pitch_mode, self.rhythm_mode, self.key_mode)
         self.canvas.add(self.game)
 
         self.state = "MOVEMENT"
@@ -63,18 +63,24 @@ class MainWidget(BaseWidget):
                     cur_location = self.game.character.grid_pos
                     new_location = (cur_location[0] + y, cur_location[1] + x)
                     self.game.character.move_player(new_location)
-
-                elif self.state == "PUZZLE":
+                else:
                     try:
                         button = Button((x, y))
-                        if button == Button.UP:
-                            self.puzzle.on_up_arrow()
-                        elif button == Button.DOWN:
-                            self.puzzle.on_down_arrow()
-                        elif button == Button.LEFT:
-                            self.puzzle.on_left_arrow()
-                        elif button == Button.RIGHT:
-                            self.puzzle.on_right_arrow()
+                        if self.state == "PITCH":
+                            if button == Button.UP:
+                                self.puzzle.on_up_arrow()
+                            elif button == Button.DOWN:
+                                self.puzzle.on_down_arrow()
+                        elif self.state == "RHYTHM":
+                            if button == Button.LEFT:
+                                self.puzzle.on_left_arrow()
+                            elif button == Button.RIGHT:
+                                self.puzzle.on_right_arrow()
+                        elif self.state == "KEY":
+                            if button == Button.LEFT:
+                                self.puzzle.on_L()
+                            elif button == Button.RIGHT:
+                                self.puzzle.on_R()
                     except:
                         pass
 
@@ -82,7 +88,7 @@ class MainWidget(BaseWidget):
                 button = Button(e.button)
                 if self.state == "MOVEMENT":
                     pass
-                elif self.state == "PUZZLE":
+                else:
                     if button == Button.Y:
                         self.puzzle.play(actual=True)
                     elif button == Button.X:
@@ -91,18 +97,20 @@ class MainWidget(BaseWidget):
                         # Exit puzzle play and go back to movement
                         self.game.character.current_tile.deactivate()
                         self.state = "MOVEMENT"
-                    elif button == Button.L:
-                        self.puzzle.on_L()
-                    elif button == Button.R:
-                        self.puzzle.on_R()
 
     # will get called when the window size changes
     def on_layout(self, win_size):
         self.game.on_layout((win_size[0], int(win_size[1] * 0.75)))
         self.puzzle.on_layout((win_size))
 
-    def start_puzzle(self):
-        self.state = "PUZZLE"
+    def key_mode(self):
+        self.state = "KEY"
+
+    def rhythm_mode(self):
+        self.state = "RHYTHM"
+
+    def pitch_mode(self):
+        self.state = "PITCH"
 
 
 if __name__ == "__main__":
