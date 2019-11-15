@@ -2,7 +2,14 @@ import sys
 
 sys.path.append("..")
 from common.core import BaseWidget, run, lookup
-from common.gfxutil import topleft_label, CEllipse, KFAnim, AnimGroup, CRectangle
+from common.gfxutil import (
+    topleft_label,
+    CEllipse,
+    KFAnim,
+    AnimGroup,
+    CRectangle,
+    CLabelRect,
+)
 
 from common.audio import Audio
 from common.mixer import Mixer
@@ -49,12 +56,12 @@ all_notes.extend([n + "5" for n in "CDEF"])
 durations = [120, 240, 480, 960]
 key_names = ["C", "G", "D", "F", "Bb", "Eb"]
 keys = {
-"C": {"#": [], "b": []},
-"G": {"#": ["F"], "b": []},
-"D": {"#": ["C", "F"], "b": []},
-"F": {"#": [], "b": ["B"]},
-"Bb": {"#": [], "b": ["B", "E"]},
-"Eb": {"#": [], "b": ["B", "E", "A"]},
+    "C": {"#": [], "b": []},
+    "G": {"#": ["F"], "b": []},
+    "D": {"#": ["C", "F"], "b": []},
+    "F": {"#": [], "b": ["B"]},
+    "Bb": {"#": [], "b": ["B", "E"]},
+    "Eb": {"#": [], "b": ["B", "E", "A"]},
 }
 
 
@@ -99,11 +106,11 @@ class MainWidget(BaseWidget):
 
         if keycode[1] == "z":
             # move now bar across music bar
-            self.music_puzzle.on_z()
+            self.music_puzzle.on_L()
 
         if keycode[1] == "x":
             # move now bar across music bar
-            self.music_puzzle.on_x()
+            self.music_puzzle.on_R()
 
 
 class MusicPuzzle(InstructionGroup):
@@ -115,7 +122,7 @@ class MusicPuzzle(InstructionGroup):
         self.add(self.animations)
 
         self.audio = Audio(2)
-        self.synth = Synth("../data/FluidR3_GM.sf2")
+        self.synth = Synth("./data/FluidR3_GM.sf2")
 
         self.tempo_map = SimpleTempoMap(120)
         self.sched = AudioScheduler(self.tempo_map)
@@ -126,10 +133,16 @@ class MusicPuzzle(InstructionGroup):
         self.user_sound = PuzzleSound(user_notes, self.sched, self.synth)
 
         self.key = "C"
+        self.key_label = CLabelRect(
+            (Window.width // 30, 23 * Window.height // 32), f"Key: {self.key}", 34
+        )
+        self.add(Color(rgba=(1, 1, 1, 1)))
+        self.add(self.key_label)
 
     def on_update(self):
         self.animations.on_update()
         self.audio.on_update()
+        self.key_label.set_text(f"Key: {self.key}")
 
     def play(self, actual=False):
         self.music_bar.play()
@@ -140,6 +153,12 @@ class MusicPuzzle(InstructionGroup):
 
     def on_layout(self, win_size):
         self.music_bar.on_layout(win_size)
+        self.remove(self.key_label)
+        self.key_label = CLabelRect(
+            (win_size[0] // 30, 23 * win_size[1] // 32), f"Key: {self.key}", 34
+        )
+        self.add(Color(rgba=(1, 1, 1, 1)))
+        self.add(self.key_label)
 
     def on_up_arrow(self):
         for note in user_notes:
@@ -156,7 +175,7 @@ class MusicPuzzle(InstructionGroup):
     def on_right_arrow(self):
         for note in user_notes:
             dur_index = durations.index(note.get_dur())
-            dur_index = -1 if dur_index == len(durations) - 1 else dur_index+1
+            dur_index = -1 if dur_index == len(durations) - 1 else dur_index + 1
             note.set_dur(durations[dur_index])
         self.user_sound.update_sounds(user_notes)
 
@@ -167,14 +186,14 @@ class MusicPuzzle(InstructionGroup):
             note.set_dur(durations[dur_index])
         self.user_sound.update_sounds(user_notes)
 
-    def on_z(self):
+    def on_L(self):
         key_index = key_names.index(self.key)
         key_index = 0 if key_index == 0 else key_index - 1
         self.key = key_names[key_index]
         self.update_key()
         self.user_sound.update_sounds(user_notes)
 
-    def on_x(self):
+    def on_R(self):
         key_index = key_names.index(self.key)
         key_index = -1 if key_index == len(key_names) - 1 else key_index + 1
         self.key = key_names[key_index]
@@ -186,12 +205,12 @@ class MusicPuzzle(InstructionGroup):
         for note in user_notes:
             if note.get_letter()[0] not in key_sig["#"]:
                 note.remove_sharp()
-            if note.get_letter()[0] not in key_sig['b']:
+            if note.get_letter()[0] not in key_sig["b"]:
                 note.remove_flat()
 
             if note.get_letter()[0] in key_sig["#"]:
                 note.add_sharp()
-            if note.get_letter()[0] in key_sig['b']:
+            if note.get_letter()[0] in key_sig["b"]:
                 note.add_flat()
 
 
@@ -216,7 +235,7 @@ class MusicBar(InstructionGroup):
         self.notes_start = self.win_size[0] / 10
         self.notes_width = self.win_size[0] - self.notes_start
 
-        t = (sum(note.get_dur() for note in self.actual_notes)+480) / 960
+        t = (sum(note.get_dur() for note in self.actual_notes) + 480) / 960
         self.now_bar = Line(
             points=(self.notes_start, self.height, self.notes_start, self.win_size[1])
         )
@@ -246,7 +265,7 @@ class MusicBar(InstructionGroup):
         for line in self.staff_lines:
             self.add(line)
         self.clef = Rectangle(
-            source="treble_clef_white.png",
+            source="./data/treble_clef_white.png",
             pos=(self.win_size[0] / 50, self.height + self.middle_c_h),
             size=(self.win_size[0] / 22, self.height / 4.5),
         )
@@ -339,11 +358,10 @@ class MusicBar(InstructionGroup):
 class NoteIcon(InstructionGroup):
     def __init__(self, radius, x_pos, y_pos):
         super().__init__()
-        self.circle = Ellipse(
-                    size=(radius, radius),
-                    pos=(x_pos, y_pos),
-                )
-        self.line = Line(points=(x_pos+radius, y_pos+radius, x_pos+radius, y_pos + 3*radius))
+        self.circle = Ellipse(size=(radius, radius), pos=(x_pos, y_pos))
+        self.line = Line(
+            points=(x_pos + radius, y_pos + radius, x_pos + radius, y_pos + 3 * radius)
+        )
         self.add(self.circle)
         self.add(self.line)
 

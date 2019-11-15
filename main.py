@@ -61,7 +61,6 @@ class MainWidget(BaseWidget):
                 x, y = self.joystick.get_hat(0)
                 if self.state == "MOVEMENT":
                     cur_location = self.game.character.grid_pos
-                    # Must subtract y because in 2d array, up is -1, but for controller up is +1
                     new_location = (cur_location[0] + y, cur_location[1] + x)
                     self.game.character.move_player(new_location)
 
@@ -72,6 +71,10 @@ class MainWidget(BaseWidget):
                             self.puzzle.on_up_arrow()
                         elif button == Button.DOWN:
                             self.puzzle.on_down_arrow()
+                        elif button == Button.LEFT:
+                            self.puzzle.on_left_arrow()
+                        elif button == Button.RIGHT:
+                            self.puzzle.on_right_arrow()
                     except:
                         pass
 
@@ -88,6 +91,10 @@ class MainWidget(BaseWidget):
                         # Exit puzzle play and go back to movement
                         self.game.character.current_tile.deactivate()
                         self.state = "MOVEMENT"
+                    elif button == Button.L:
+                        self.puzzle.on_L()
+                    elif button == Button.R:
+                        self.puzzle.on_R()
 
     # will get called when the window size changes
     def on_layout(self, win_size):
@@ -99,4 +106,4 @@ class MainWidget(BaseWidget):
 
 
 if __name__ == "__main__":
-    run(MainWidget)
+    run(MainWidget, fullscreen=True)
