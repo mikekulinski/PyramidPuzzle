@@ -43,18 +43,16 @@ class MainWidget(BaseWidget):
         self.joystick.init()
         pygame.init()
 
+        self.game = Game(self.pitch_mode, self.rhythm_mode, self.key_mode)
+        self.canvas.add(self.game)
+
         self.puzzle_pos = (0, Window.height * 0.75)
         self.puzzle = MusicPuzzle()
         self.canvas.add(self.puzzle)
 
-        self.game = Game(self.pitch_mode, self.rhythm_mode, self.key_mode)
-        self.canvas.add(self.game)
-
         self.state = "MOVEMENT"
 
     def on_update(self):
-        self.puzzle.on_update()
-
         eventlist = pygame.event.get()
         for e in eventlist:
             if e.type == pygame.locals.JOYHATMOTION:
@@ -97,6 +95,8 @@ class MainWidget(BaseWidget):
                         # Exit puzzle play and go back to movement
                         self.game.character.current_tile.deactivate()
                         self.state = "MOVEMENT"
+
+        self.puzzle.on_update()
 
     # will get called when the window size changes
     def on_layout(self, win_size):

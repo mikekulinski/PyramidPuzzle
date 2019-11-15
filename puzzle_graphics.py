@@ -133,6 +133,7 @@ class MusicPuzzle(InstructionGroup):
         self.actual_sound = PuzzleSound(notes, self.sched, self.synth)
         self.user_sound = PuzzleSound(user_notes, self.sched, self.synth)
 
+        self.actual_key = "C"
         self.user_key = choice(key_names)
         self.key_label = CLabelRect(
             (Window.width // 30, 23 * Window.height // 32), f"Key: {self.user_key}", 34
@@ -140,10 +141,25 @@ class MusicPuzzle(InstructionGroup):
         self.add(Color(rgba=(1, 1, 1, 1)))
         self.add(self.key_label)
 
+        self.game_over_window_color = Color(rgba=(1, 1, 1, 1))
+        self.game_over_window = CRectangle(
+            cpos=(Window.width // 2, Window.height // 2),
+            csize=(Window.width // 2, Window.height // 5),
+        )
+        self.game_over_text_color = Color(rgba=(0, 0, 0, 1))
+        self.game_over_text = CLabelRect(
+            (Window.width // 2, Window.height // 2), "You Win!", 70
+        )
+
     def on_update(self):
         self.animations.on_update()
         self.audio.on_update()
         self.key_label.set_text(f"Key: {self.user_key}")
+        if self.is_game_over():
+            self.add(self.game_over_window_color)
+            self.add(self.game_over_window)
+            self.add(self.game_over_text_color)
+            self.add(self.game_over_text)
 
     def play(self, actual=False):
         self.music_bar.play()
@@ -160,6 +176,16 @@ class MusicPuzzle(InstructionGroup):
         )
         self.add(Color(rgba=(1, 1, 1, 1)))
         self.add(self.key_label)
+
+        self.game_over_window_color = Color(rgba=(1, 1, 1, 1))
+        self.game_over_window = CRectangle(
+            cpos=(win_size[0] // 2, win_size[1] // 2),
+            csize=(win_size[0] // 2, win_size[1] // 5),
+        )
+        self.game_over_text_color = Color(rgba=(0, 0, 0, 1))
+        self.game_over_text = CLabelRect(
+            (win_size[0] // 2, win_size[1] // 2), "You Win!", 70
+        )
 
     def on_up_arrow(self):
         for note in user_notes:
@@ -213,6 +239,18 @@ class MusicPuzzle(InstructionGroup):
                 note.add_sharp()
             if note.get_letter()[0] in key_sig["b"]:
                 note.add_flat()
+
+    def is_game_over(self):
+        same_key = self.user_key == self.actual_key
+        same_dur = (
+            self.music_bar.user_notes[0].get_dur()
+            == self.music_bar.actual_notes[0].get_dur()
+        )
+        same_pitch = (
+            self.music_bar.user_notes[0].get_pitch()
+            == self.music_bar.actual_notes[0].get_pitch()
+        )
+        return same_key and same_dur and same_pitch
 
 
 class MusicBar(InstructionGroup):
@@ -277,8 +315,9 @@ class MusicBar(InstructionGroup):
 
     def place_notes(self, actual=True):
         notes_to_place = self.actual_notes if actual else self.user_notes
-        if not actual:
+        if actual:
             self.add(Color(a=0.5))
+        else:
             self.user_note_instructions = set()
 
         num_measures = int(sum(note.get_dur() / 480 / 4 for note in self.actual_notes))
