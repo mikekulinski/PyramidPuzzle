@@ -34,7 +34,7 @@ from common.clock import (
     quantize_tick_up,
 )
 
-from random import randint, random
+from random import randint, random, choice
 import numpy as np
 
 notes = (
@@ -48,12 +48,13 @@ notes = (
     Note(480, 72),
 )
 
-user_notes = [Note(n.get_dur(), n.get_pitch() + 3) for n in notes]
 notes_w_staff_lines = ["E4", "G4", "B4", "D5", "F5"]
 names = "CDEFGAB"
 all_notes = [n + "4" for n in names]
 all_notes.extend([n + "5" for n in "CDEF"])
 durations = [120, 240, 480, 960]
+duration = choice(durations)
+user_notes = [Note(duration, n.get_pitch() + 3) for n in notes]
 key_names = ["C", "G", "D", "F", "Bb", "Eb"]
 keys = {
     "C": {"#": [], "b": []},
@@ -132,9 +133,9 @@ class MusicPuzzle(InstructionGroup):
         self.actual_sound = PuzzleSound(notes, self.sched, self.synth)
         self.user_sound = PuzzleSound(user_notes, self.sched, self.synth)
 
-        self.key = "C"
+        self.user_key = choice(key_names)
         self.key_label = CLabelRect(
-            (Window.width // 30, 23 * Window.height // 32), f"Key: {self.key}", 34
+            (Window.width // 30, 23 * Window.height // 32), f"Key: {self.user_key}", 34
         )
         self.add(Color(rgba=(1, 1, 1, 1)))
         self.add(self.key_label)
@@ -142,7 +143,7 @@ class MusicPuzzle(InstructionGroup):
     def on_update(self):
         self.animations.on_update()
         self.audio.on_update()
-        self.key_label.set_text(f"Key: {self.key}")
+        self.key_label.set_text(f"Key: {self.user_key}")
 
     def play(self, actual=False):
         self.music_bar.play()
@@ -155,7 +156,7 @@ class MusicPuzzle(InstructionGroup):
         self.music_bar.on_layout(win_size)
         self.remove(self.key_label)
         self.key_label = CLabelRect(
-            (win_size[0] // 30, 23 * win_size[1] // 32), f"Key: {self.key}", 34
+            (win_size[0] // 30, 23 * win_size[1] // 32), f"Key: {self.user_key}", 34
         )
         self.add(Color(rgba=(1, 1, 1, 1)))
         self.add(self.key_label)
@@ -187,21 +188,21 @@ class MusicPuzzle(InstructionGroup):
         self.user_sound.update_sounds(user_notes)
 
     def on_L(self):
-        key_index = key_names.index(self.key)
+        key_index = key_names.index(self.user_key)
         key_index = 0 if key_index == 0 else key_index - 1
-        self.key = key_names[key_index]
+        self.user_key = key_names[key_index]
         self.update_key()
         self.user_sound.update_sounds(user_notes)
 
     def on_R(self):
-        key_index = key_names.index(self.key)
+        key_index = key_names.index(self.user_key)
         key_index = -1 if key_index == len(key_names) - 1 else key_index + 1
-        self.key = key_names[key_index]
+        self.user_key = key_names[key_index]
         self.update_key()
         self.user_sound.update_sounds(user_notes)
 
     def update_key(self):
-        key_sig = keys[self.key]
+        key_sig = keys[self.user_key]
         for note in user_notes:
             if note.get_letter()[0] not in key_sig["#"]:
                 note.remove_sharp()
