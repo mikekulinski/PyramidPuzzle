@@ -46,6 +46,16 @@ notes_w_staff_lines = ["E4", "G4", "B4", "D5", "F5"]
 names = "CDEFGAB"
 all_notes = [n + "4" for n in names]
 all_notes.extend([n + "5" for n in "CDEF"])
+durations = [120, 240, 480, 960]
+key_names = ["C", "G", "D", "F", "Bb", "Eb"]
+keys = {
+"C": {"#": [], "b": []},
+"G": {"#": ["F"], "b": []},
+"D": {"#": ["C", "F"], "b": []},
+"F": {"#": [], "b": ["B"]},
+"Bb": {"#": [], "b": ["B", "E"]},
+"Eb": {"#": [], "b": ["B", "E", "A"]},
+}
 
 
 # will have access to note+octave, C4 = 0
@@ -79,6 +89,22 @@ class MainWidget(BaseWidget):
             # move now bar across music bar
             self.music_puzzle.on_down_arrow()
 
+        if keycode[1] == "r":
+            # move now bar across music bar
+            self.music_puzzle.on_left_arrow()
+
+        if keycode[1] == "y":
+            # move now bar across music bar
+            self.music_puzzle.on_right_arrow()
+
+        if keycode[1] == "z":
+            # move now bar across music bar
+            self.music_puzzle.on_z()
+
+        if keycode[1] == "x":
+            # move now bar across music bar
+            self.music_puzzle.on_x()
+
 
 class MusicPuzzle(InstructionGroup):
     def __init__(self):
@@ -89,7 +115,7 @@ class MusicPuzzle(InstructionGroup):
         self.add(self.animations)
 
         self.audio = Audio(2)
-        self.synth = Synth("./data/FluidR3_GM.sf2")
+        self.synth = Synth("../data/FluidR3_GM.sf2")
 
         self.tempo_map = SimpleTempoMap(120)
         self.sched = AudioScheduler(self.tempo_map)
@@ -98,6 +124,8 @@ class MusicPuzzle(InstructionGroup):
         self.audio.set_generator(self.sched)
         self.actual_sound = PuzzleSound(notes, self.sched, self.synth)
         self.user_sound = PuzzleSound(user_notes, self.sched, self.synth)
+
+        self.key = "C"
 
     def on_update(self):
         self.animations.on_update()
@@ -117,11 +145,54 @@ class MusicPuzzle(InstructionGroup):
         for note in user_notes:
             pitch = note.get_pitch()
             note.set_note(pitch + 1)
+        self.user_sound.update_sounds(user_notes)
 
     def on_down_arrow(self):
         for note in user_notes:
             pitch = note.get_pitch()
             note.set_note(pitch - 1)
+        self.user_sound.update_sounds(user_notes)
+
+    def on_right_arrow(self):
+        for note in user_notes:
+            dur_index = durations.index(note.get_dur())
+            dur_index = -1 if dur_index == len(durations) - 1 else dur_index+1
+            note.set_dur(durations[dur_index])
+        self.user_sound.update_sounds(user_notes)
+
+    def on_left_arrow(self):
+        for note in user_notes:
+            dur_index = durations.index(note.get_dur())
+            dur_index = 0 if dur_index == 0 else dur_index - 1
+            note.set_dur(durations[dur_index])
+        self.user_sound.update_sounds(user_notes)
+
+    def on_z(self):
+        key_index = key_names.index(self.key)
+        key_index = 0 if key_index == 0 else key_index - 1
+        self.key = key_names[key_index]
+        self.update_key()
+        self.user_sound.update_sounds(user_notes)
+
+    def on_x(self):
+        key_index = key_names.index(self.key)
+        key_index = -1 if key_index == len(key_names) - 1 else key_index + 1
+        self.key = key_names[key_index]
+        self.update_key()
+        self.user_sound.update_sounds(user_notes)
+
+    def update_key(self):
+        key_sig = keys[self.key]
+        for note in user_notes:
+            if note.get_letter()[0] not in key_sig["#"]:
+                note.remove_sharp()
+            if note.get_letter()[0] not in key_sig['b']:
+                note.remove_flat()
+
+            if note.get_letter()[0] in key_sig["#"]:
+                note.add_sharp()
+            if note.get_letter()[0] in key_sig['b']:
+                note.add_flat()
 
 
 class MusicBar(InstructionGroup):
@@ -145,7 +216,7 @@ class MusicBar(InstructionGroup):
         self.notes_start = self.win_size[0] / 10
         self.notes_width = self.win_size[0] - self.notes_start
 
-        t = sum(note.get_dur() for note in self.actual_notes) / 960
+        t = (sum(note.get_dur() for note in self.actual_notes)+480) / 960
         self.now_bar = Line(
             points=(self.notes_start, self.height, self.notes_start, self.win_size[1])
         )
@@ -190,7 +261,7 @@ class MusicBar(InstructionGroup):
             self.add(Color(a=0.5))
             self.user_note_instructions = set()
 
-        num_measures = int(sum(note.get_dur() / 480 / 4 for note in notes_to_place))
+        num_measures = int(sum(note.get_dur() / 480 / 4 for note in self.actual_notes))
         note_index = 0
         # place all measure lines
         x_start = self.notes_start
@@ -198,7 +269,7 @@ class MusicBar(InstructionGroup):
             measure = []
             measure_beats = 0
             x_end = self.notes_start + self.notes_width * (i + 1) / num_measures
-            while measure_beats < 1:
+            while measure_beats < 1 and note_index < len(notes_to_place):
                 duration = notes_to_place[note_index].get_dur() / 480 / 4
                 pitch = notes_to_place[note_index].get_pitch()
                 n_val = notes_to_place[note_index].get_letter()
@@ -222,10 +293,7 @@ class MusicBar(InstructionGroup):
                         )
                     )
                     self.add(ledger)
-                note_obj = Ellipse(
-                    size=(self.staff_lines_height, self.staff_lines_height),
-                    pos=(x_pos, height),
-                )
+                note_obj = NoteIcon(self.staff_lines_height, x_pos, height)
                 self.add(note_obj)
                 if not actual:
                     self.user_note_instructions.add(note_obj)
@@ -266,6 +334,22 @@ class MusicBar(InstructionGroup):
 
         self.win_size = win_size
         self.render_elements()
+
+
+class NoteIcon(InstructionGroup):
+    def __init__(self, radius, x_pos, y_pos):
+        super().__init__()
+        self.circle = Ellipse(
+                    size=(radius, radius),
+                    pos=(x_pos, y_pos),
+                )
+        self.line = Line(points=(x_pos+radius, y_pos+radius, x_pos+radius, y_pos + 3*radius))
+        self.add(self.circle)
+        self.add(self.line)
+
+    def on_update(self):
+        self.circle.on_update()
+        self.line.on_update()
 
 
 if __name__ == "__main__":

@@ -83,6 +83,9 @@ class Note(object):
 		self.midipitch = midipitch
 		self.notedur = notedur
 
+		self.sharp = False
+		self.flat = False
+
 	def set_note(self, pitch):
 		ocatave = int(pitch/12)-1
 		noteidx = pitch%12
@@ -96,11 +99,34 @@ class Note(object):
 	def get_pitch(self):
 		return self.midipitch
 
+	def get_pitch_to_play(self):
+		return self.adj_pitch
+
 	def set_dur(self, dur):
 		self.notedur = dur
 
 	def get_dur(self):
 		return self.notedur
+
+	def add_sharp(self):
+		if not self.sharp:
+			self.set_note(self.get_pitch()+1)
+			self.sharp = True
+
+	def add_flat(self):
+		if not self.flat:
+			self.set_note(self.get_pitch()-1)
+			self.flat = True
+
+	def remove_sharp(self):
+		if self.sharp:
+			self.set_note(self.get_pitch()-1)
+			self.sharp = False
+
+	def remove_flat(self):
+		if self.flat:
+			self.set_note(self.get_pitch()+1)
+			self.flat = False
 
 
 
