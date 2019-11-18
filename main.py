@@ -28,13 +28,13 @@ import pygame
 from pygame.locals import JOYAXISMOTION, JOYBUTTONDOWN, JOYBUTTONUP, JOYHATMOTION, QUIT
 import time
 
-from character_movement import Game
-from puzzle_graphics import MusicPuzzle
+from src.character_movement import Game
+from src.piano_puzzle import MusicPuzzle
 
 from common.button import Button
 
 
-class MainWidget(BaseWidget):
+class Controller(BaseWidget):
     def __init__(self):
         super().__init__()
         # Init pygame controller input
@@ -113,5 +113,81 @@ class MainWidget(BaseWidget):
         self.state = "PITCH"
 
 
+class Keyboard(BaseWidget):
+    def __init__(self):
+        super().__init__()
+        self.game = Game(self.pitch_mode, self.rhythm_mode, self.key_mode)
+        self.canvas.add(self.game)
+
+        self.puzzle_pos = (0, Window.height * 0.75)
+        self.puzzle = MusicPuzzle()
+        self.canvas.add(self.puzzle)
+
+        self.state = "MOVEMENT"
+
+    def on_update(self):
+        self.puzzle.on_update()
+
+    def on_key_down(self, keycode, modifiers):
+        if self.state == "MOVEMENT":
+            if keycode[1] == "left":
+                x, y = (-1, 0)
+            elif keycode[1] == "right":
+                x, y = (1, 0)
+            elif keycode[1] == "up":
+                x, y = (0, 1)
+            elif keycode[1] == "down":
+                x, y = (0, -1)
+
+            cur_location = self.game.character.grid_pos
+            new_location = (cur_location[0] + y, cur_location[1] + x)
+            self.game.character.move_player(new_location)
+        else:
+
+            if self.state == "PITCH":
+                if keycode[1] == "up":
+                    self.puzzle.on_up_arrow()
+                elif keycode[1] == "down":
+                    self.puzzle.on_down_arrow()
+            elif self.state == "RHYTHM":
+                if keycode[1] == "left":
+                    self.puzzle.on_left_arrow()
+                elif keycode[1] == "right":
+                    self.puzzle.on_right_arrow()
+            elif self.state == "KEY":
+                if keycode[1] == "left":
+                    self.puzzle.on_L()
+                elif keycode[1] == "right":
+                    self.puzzle.on_R()
+
+        if keycode[1] == "p":
+            self.puzzle.play(actual=True)
+        elif keycode[1] == "q":
+            self.puzzle.play(actual=False)
+        elif keycode[1] == "b":
+            # Exit puzzle play and go back to movement
+            self.game.character.current_tile.deactivate()
+            self.state = "MOVEMENT"
+
+    # will get called when the window size changes
+    def on_layout(self, win_size):
+        self.game.on_layout((win_size[0], int(win_size[1] * 0.75)))
+        self.puzzle.on_layout((win_size))
+
+    def key_mode(self):
+        self.state = "KEY"
+
+    def rhythm_mode(self):
+        self.state = "RHYTHM"
+
+    def pitch_mode(self):
+        self.state = "PITCH"
+
+
 if __name__ == "__main__":
-    run(MainWidget, fullscreen=True)
+    num_args = len(sys.argv)
+    main_widget = Controller
+    if num_args > 1 and sys.argv[1].lower() == "keyboard":
+        main_widget = Keyboard
+
+    run(main_widget, fullscreen=True)

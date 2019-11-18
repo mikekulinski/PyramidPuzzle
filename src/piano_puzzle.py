@@ -24,7 +24,7 @@ from kivy.uix.label import Label
 from kivy.graphics.instructions import InstructionGroup
 from kivy.graphics import Color, Ellipse, Rectangle, Line
 from kivy.graphics import PushMatrix, PopMatrix, Translate, Scale, Rotate
-from PuzzleSound import Note, PuzzleSound
+from src.puzzle_sound import Note, PuzzleSound
 from common.clock import (
     Clock,
     SimpleTempoMap,
@@ -69,49 +69,6 @@ keys = {
 # will have access to note+octave, C4 = 0
 # put music bar in instruction group for mike to use
 # when receiving instructions from controller, change note object and graphics
-
-
-class MainWidget(BaseWidget):
-    def __init__(self):
-        super().__init__()
-        self.music_puzzle = MusicPuzzle()
-        self.canvas.add(self.music_puzzle)
-
-    def on_update(self):
-        self.music_puzzle.on_update()
-
-    def on_key_down(self, keycode, modifiers):
-        # trigger a note to play with keys 1-8
-
-        if keycode[1] == "p":
-            # move now bar across music bar
-            self.music_puzzle.play(actual=True)
-        if keycode[1] == "q":
-            self.music_puzzle.play(actual=False)
-
-        if keycode[1] == "t":
-            # move now bar across music bar
-            self.music_puzzle.on_up_arrow()
-
-        if keycode[1] == "g":
-            # move now bar across music bar
-            self.music_puzzle.on_down_arrow()
-
-        if keycode[1] == "r":
-            # move now bar across music bar
-            self.music_puzzle.on_left_arrow()
-
-        if keycode[1] == "y":
-            # move now bar across music bar
-            self.music_puzzle.on_right_arrow()
-
-        if keycode[1] == "z":
-            # move now bar across music bar
-            self.music_puzzle.on_L()
-
-        if keycode[1] == "x":
-            # move now bar across music bar
-            self.music_puzzle.on_R()
 
 
 class MusicPuzzle(InstructionGroup):
