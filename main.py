@@ -28,8 +28,8 @@ import pygame
 from pygame.locals import JOYAXISMOTION, JOYBUTTONDOWN, JOYBUTTONUP, JOYHATMOTION, QUIT
 import time
 
-from character_movement import Game
-from puzzle_graphics import MusicPuzzle
+from src.character_movement import Game
+from src.piano_puzzle import MusicPuzzle
 
 from common.button import Button
 

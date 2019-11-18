@@ -24,7 +24,7 @@ from kivy.uix.label import Label
 from kivy.graphics.instructions import InstructionGroup
 from kivy.graphics import Color, Ellipse, Rectangle, Line
 from kivy.graphics import PushMatrix, PopMatrix, Translate, Scale, Rotate
-from PuzzleSound import Note, PuzzleSound
+from src.puzzle_sound import Note, PuzzleSound
 from common.clock import (
     Clock,
     SimpleTempoMap,
