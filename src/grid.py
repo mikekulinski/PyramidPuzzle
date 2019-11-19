@@ -20,7 +20,7 @@ class Tile(InstructionGroup):
         self.add(self.inside_rect)
 
         self.border_color = Tile.border_color
-        self.border_line = Line(rectangle=(pos[0], pos[1], size[0], size[1]))
+        self.border_line = Line(rectangle=(pos[0], pos[1], size[0], size[1]), width=3)
         self.add(self.border_color)
         self.add(self.border_line)
 
@@ -61,16 +61,13 @@ class Switch(Tile):
 
 
 class Grid(InstructionGroup):
-    def __init__(self, num_tiles=9, objects=[]):
+    def __init__(self, num_tiles=9):
         super().__init__()
         self.win_size = (Window.width, Window.height)
         self.num_tiles = num_tiles
-        self.objects = objects
 
         self.calculate_dims()
         self.place_tiles()
-        for loc, obj in self.objects:
-            self.place_object(loc, obj)
 
     def calculate_dims(self):
         # Finds the largest grid size that fits the current dimensions
@@ -91,38 +88,26 @@ class Grid(InstructionGroup):
         self.add(Translate(*self.pos))
 
         self.tiles = []
-        for r in range(self.num_tiles):
+        for y in range(self.num_tiles):
             self.tiles.append([])
-            for c in range(self.num_tiles):
+            for x in range(self.num_tiles):
                 tile = Tile(
                     size=(self.tile_side_len, self.tile_side_len),
-                    pos=(c * self.tile_side_len, r * self.tile_side_len),
+                    pos=self.grid_to_pixel((x, y)),
                 )
 
-                self.tiles[r].append(tile)
+                self.tiles[y].append(tile)
                 self.add(tile)
 
         self.add(PopMatrix())
 
-    def place_object(self, loc, obj):
-        self.add(PushMatrix())
-        self.add(Translate(*self.pos))
-
-        r, c = loc
-        old_tile = self.tiles[r][c]
-        self.remove(old_tile)
-        new_tile = obj(
-            size=(self.tile_side_len, self.tile_side_len),
-            pos=(c * self.tile_side_len, r * self.tile_side_len),
-        )
-        self.tiles[r][c] = new_tile
-        self.add(new_tile)
-
-        self.add(PopMatrix())
-
     def get_tile(self, loc):
-        r, c = loc
-        return self.tiles[r][c]
+        x, y = loc
+        return self.tiles[y][x]
+
+    def grid_to_pixel(self, loc):
+        x, y = loc
+        return (x * self.tile_side_len, y * self.tile_side_len)
 
     def on_layout(self, win_size):
         for row in self.tiles:
@@ -133,5 +118,3 @@ class Grid(InstructionGroup):
 
         self.calculate_dims()
         self.place_tiles()
-        for loc, obj in self.objects:
-            self.place_object(loc, obj)

@@ -26,19 +26,21 @@ class UserInput(object):
     def on_keyboard_input(keycode, modifiers):
         button = None
         if keycode[1] == "left":
-            button = Button((-1, 0))
+            button = Button.LEFT
         elif keycode[1] == "right":
-            button = Button((1, 0))
+            button = Button.RIGHT
         elif keycode[1] == "up":
-            button = Button((0, 1))
+            button = Button.UP
         elif keycode[1] == "down":
-            button = Button((0, -1))
+            button = Button.DOWN
         elif keycode[1] == "p":
-            button = Button(8)
+            button = Button.MINUS
         elif keycode[1] == "q":
-            button = Button(9)
+            button = Button.PLUS
+        elif keycode[1] == "a":
+            button = Button.A
         elif keycode[1] == "b":
-            button = Button(0)
+            button = Button.B
         else:
             print(f"UNMAPPED KEYPRESS: {keycode[1]}")
 

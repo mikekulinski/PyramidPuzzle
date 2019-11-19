@@ -40,7 +40,7 @@ class MainWidget(BaseWidget):
         if self.control_type == "controller":
             button = UserInput.on_controller_input(self.joystick)
             if button:
-                self.game.handle_input(button)
+                self.game.on_player_input(button)
 
         self.game.on_update()
 
@@ -48,7 +48,7 @@ class MainWidget(BaseWidget):
         if self.control_type == "keyboard":
             button = UserInput.on_keyboard_input(keycode, modifiers)
             if button:
-                self.game.handle_input(button)
+                self.game.on_player_input(button)
 
     # will get called when the window size changes
     def on_layout(self, win_size):
