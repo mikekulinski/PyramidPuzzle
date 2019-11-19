@@ -9,11 +9,11 @@ FLOOR_SIZE = 9
 
 
 class Character(InstructionGroup):
-    def __init__(self, game):
+    def __init__(self, puzzle):
         super().__init__()
-        self.game = game
+        self.puzzle = puzzle
         self.grid_pos = (0, 0)
-        self.current_tile = self.game.grid.get_tile(self.grid_pos)
+        self.current_tile = self.puzzle.grid.get_tile(self.grid_pos)
         self.sprite = CRectangle()
         self.add(self.sprite)
 
@@ -43,9 +43,9 @@ class Character(InstructionGroup):
         self.remove(self.sprite)
 
         self.grid_pos = new_pos
-        self.current_tile = self.game.grid.get_tile(self.grid_pos)
+        self.current_tile = self.puzzle.grid.get_tile(self.grid_pos)
         tile_size = self.current_tile.size
-        self.pixel_pos = self.current_tile.pos + (tile_size // 2) + self.game.grid.pos
+        self.pixel_pos = self.current_tile.pos + (tile_size // 2) + self.puzzle.grid.pos
 
         self.size = tile_size // 3
 
