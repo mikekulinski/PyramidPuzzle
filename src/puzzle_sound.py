@@ -1,25 +1,32 @@
 import sys
 
-sys.path.append("..")
-from common.core import BaseWidget, run, lookup
+import numpy as np
+from kivy.clock import Clock as kivyClock
+from kivy.graphics import (
+    Color,
+    Ellipse,
+    Line,
+    PopMatrix,
+    PushMatrix,
+    Rectangle,
+    Translate,
+)
+from kivy.graphics.instructions import InstructionGroup
+
 from common.audio import Audio
 from common.clock import (
+    AudioScheduler,
     Clock,
     SimpleTempoMap,
-    AudioScheduler,
-    tick_str,
     kTicksPerQuarter,
     quantize_tick_up,
+    tick_str,
 )
+from common.core import BaseWidget, lookup, run
 from common.gfxutil import topleft_label
 from common.synth import Synth
 
-from kivy.graphics.instructions import InstructionGroup
-from kivy.graphics import Color, Ellipse, Line, Rectangle
-from kivy.graphics import PushMatrix, PopMatrix, Translate
-from kivy.clock import Clock as kivyClock
-
-import numpy as np
+sys.path.append("..")
 
 
 class MainWidget(BaseWidget):
@@ -228,4 +235,3 @@ class NoteSequencer(object):
 
 if __name__ == "__main__":
     run(MainWidget)
-

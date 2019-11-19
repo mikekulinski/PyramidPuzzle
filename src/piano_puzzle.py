@@ -1,41 +1,14 @@
-import sys
-
-sys.path.append("..")
-from common.core import BaseWidget, run, lookup
-from common.gfxutil import (
-    topleft_label,
-    CEllipse,
-    KFAnim,
-    AnimGroup,
-    CRectangle,
-    CLabelRect,
-)
-
-from common.audio import Audio
-from common.mixer import Mixer
-from common.note import NoteGenerator, Envelope
-from common.wavegen import WaveGenerator, SpeedModulator
-from common.wavesrc import WaveBuffer, WaveFile, make_wave_buffers
-from common.synth import Synth
+from random import choice
 
 from kivy.core.window import Window
-from kivy.clock import Clock as kivyClock
-from kivy.uix.label import Label
+from kivy.graphics import Color, Ellipse, Line, Rectangle
 from kivy.graphics.instructions import InstructionGroup
-from kivy.graphics import Color, Ellipse, Rectangle, Line
-from kivy.graphics import PushMatrix, PopMatrix, Translate, Scale, Rotate
-from src.puzzle_sound import Note, PuzzleSound
-from common.clock import (
-    Clock,
-    SimpleTempoMap,
-    AudioScheduler,
-    tick_str,
-    kTicksPerQuarter,
-    quantize_tick_up,
-)
 
-from random import randint, random, choice
-import numpy as np
+from common.audio import Audio
+from common.clock import AudioScheduler, SimpleTempoMap
+from common.gfxutil import AnimGroup, CLabelRect, CRectangle, KFAnim
+from common.synth import Synth
+from src.puzzle_sound import Note, PuzzleSound
 
 notes = (
     Note(480, 60),
@@ -238,7 +211,7 @@ class MusicBar(InstructionGroup):
         self.now_bar_pos = KFAnim((0, self.notes_start), (t, self.win_size[0]))
         self.border = Line(points=(0, self.height, self.win_size[0], self.height))
 
-        # loop thru all notes and map positions to them--only draw lines for certain ones
+        # loop thru all notes and map positions -only draw lines for certain ones
 
         self.staff_lines = []
         self.staff_mappings = dict()
@@ -282,12 +255,12 @@ class MusicBar(InstructionGroup):
         # place all measure lines
         x_start = self.notes_start
         for i in range(num_measures):
-            measure = []
+            # measure = []
             measure_beats = 0
             x_end = self.notes_start + self.notes_width * (i + 1) / num_measures
             while measure_beats < 1 and note_index < len(notes_to_place):
                 duration = notes_to_place[note_index].get_dur() / 480 / 4
-                pitch = notes_to_place[note_index].get_pitch()
+                # pitch = notes_to_place[note_index].get_pitch()
                 n_val = notes_to_place[note_index].get_letter()
                 if len(n_val) == 3:
                     n_val = n_val[0::2]
@@ -367,5 +340,5 @@ class NoteIcon(InstructionGroup):
         self.line.on_update()
 
 
-if __name__ == "__main__":
-    run(MainWidget)
+# if __name__ == "__main__":
+#     run(MainWidget)
