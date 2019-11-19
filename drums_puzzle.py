@@ -37,40 +37,27 @@ from common.clock import (
 from random import randint, random, choice
 import numpy as np
 
-notes = (
-    Note(480, 60),
-    Note(480, 62),
-    Note(480, 64),
-    Note(480, 65),
-    Note(480, 67),
-    Note(480, 69),
-    Note(480, 71),
-    Note(480, 72),
-)
+#make audio loop so notes change in real time
+#map a 4 x 4 grid x axis is beat and y axis is instrument (hi-hat, bass drum, etc.)
+#no concept of actual sound
 
-notes_w_staff_lines = ["E4", "G4", "B4", "D5", "F5"]
-names = "CDEFGAB"
-all_notes = [n + "4" for n in names]
-all_notes.extend([n + "5" for n in "CDEF"])
-durations = [120, 240, 480, 960]
-duration = choice(durations)
-user_notes = [Note(duration, n.get_pitch() + 3) for n in notes]
-key_names = ["C", "G", "D", "F", "Bb", "Eb"]
-keys = {
-    "C": {"#": [], "b": []},
-    "G": {"#": ["F"], "b": []},
-    "D": {"#": ["C", "F"], "b": []},
-    "F": {"#": [], "b": ["B"]},
-    "Bb": {"#": [], "b": ["B", "E"]},
-    "Eb": {"#": [], "b": ["B", "E", "A"]},
-}
+pattern = [
+            "X  X",
+            " XX ",
+            "XX  ",
+            "  X "
+            ]
+#pressing (0,0) toggles (0,2) and (2,0)
+#pressing (1,0) toggles (0,0) and (1,0)
+#pressing () 
 
 
-# will have access to note+octave, C4 = 0
-# put music bar in instruction group for mike to use
-# when receiving instructions from controller, change note object and graphics
+#hi-hat, snare, bass drum, tambourine
+instruments = [42, 38, 36, 54]
+all_rests = [Note(480, 0) for _ in range(8)]
 
-
+#character knows which tile its on
+#receive tile, toggle that tile and the surrounding ones
 class MainWidget(BaseWidget):
     def __init__(self):
         super().__init__()
@@ -81,21 +68,16 @@ class MainWidget(BaseWidget):
         self.music_puzzle.on_update()
 
     def on_key_down(self, keycode, modifiers):
-        # trigger a note to play with keys 1-8
-
         if keycode[1] == "p":
-            # move now bar across music bar
-            self.music_puzzle.play(actual=True)
+            self.music_puzzle.on_p()
 
 
 class DrumsPuzzle(InstructionGroup):
     def __init__(self):
         super().__init__()
-        self.animations = AnimGroup()
-        self.animations.add(self.music_bar)
-        self.add(self.animations)
-
         self.audio = Audio(2)
+        self.drum_graphics = DrumPatternGraphics(pattern)
+        self.add(self.drum_graphics)
         self.synth = Synth("./data/FluidR3_GM.sf2")
 
         self.tempo_map = SimpleTempoMap(120)
@@ -103,96 +85,68 @@ class DrumsPuzzle(InstructionGroup):
 
         self.sched.set_generator(self.synth)
         self.audio.set_generator(self.sched)
-        self.actual_sound = PuzzleSound(notes, self.sched, self.synth)
-        self.user_sound = PuzzleSound(user_notes, self.sched, self.synth)
+    
+        self.beats = all_rests
+        self.sound = PuzzleSound(self.beats, self.sched, self.synth, bank=128, preset=0)
 
-        self.actual_key = "C"
-        self.user_key = choice(key_names)
-        self.key_label = CLabelRect(
-            (Window.width // 30, 23 * Window.height // 32), f"Key: {self.user_key}", 34
-        )
-        self.add(Color(rgba=(1, 1, 1, 1)))
-        self.add(self.key_label)
-
-        self.game_over_window_color = Color(rgba=(1, 1, 1, 1))
-        self.game_over_window = CRectangle(
-            cpos=(Window.width // 2, Window.height // 2),
-            csize=(Window.width // 2, Window.height // 5),
-        )
-        self.game_over_text_color = Color(rgba=(0, 0, 0, 1))
-        self.game_over_text = CLabelRect(
-            (Window.width // 2, Window.height // 2), "You Win!", 70
-        )
 
     def on_update(self):
-        self.animations.on_update()
         self.audio.on_update()
-        self.key_label.set_text(f"Key: {self.user_key}")
-        if self.is_game_over():
-            self.add(self.game_over_window_color)
-            self.add(self.game_over_window)
-            self.add(self.game_over_text_color)
-            self.add(self.game_over_text)
-
-    def play(self, actual=False):
-        self.music_bar.play()
-        if actual:
-            self.actual_sound.toggle()
-        else:
-            self.user_sound.toggle()
 
     def on_layout(self, win_size):
-        self.music_bar.on_layout(win_size)
-        self.remove(self.key_label)
-        self.key_label = CLabelRect(
-            (win_size[0] // 30, 23 * win_size[1] // 32), f"Key: {self.user_key}", 34
-        )
-        self.add(Color(rgba=(1, 1, 1, 1)))
-        self.add(self.key_label)
+        self.drum_graphics.on_layout(win_size)
+        pass
 
-        self.game_over_window_color = Color(rgba=(1, 1, 1, 1))
-        self.game_over_window = CRectangle(
-            cpos=(win_size[0] // 2, win_size[1] // 2),
-            csize=(win_size[0] // 2, win_size[1] // 5),
-        )
-        self.game_over_text_color = Color(rgba=(0, 0, 0, 1))
-        self.game_over_text = CLabelRect(
-            (win_size[0] // 2, win_size[1] // 2), "You Win!", 70
-        )
+    def on_p(self):
+        self.sound.toggle()
 
-
-class MusicBar(InstructionGroup):
-    def __init__(self, actual_notes, user_notes):
+class DrumPatternGraphics(InstructionGroup):
+    def __init__(self, pattern):
         super().__init__()
         self.win_size = (Window.width, Window.height)
-        self.actual_notes = actual_notes
-        self.user_notes = user_notes
-
+        self.pattern = pattern
         self.render_elements()
 
-        self.time = 0
-        self.now_bar_moving = False
-
-    def on_update(self, dt):
-        if self.now_bar_moving:
-            pos = self.now_bar_pos.eval(self.time)
-            self.now_bar.points = (pos, self.height, pos, self.win_size[1])
-            self.time += dt
-            if pos == self.win_size[0]:
-                self.time = 0
-                self.now_bar_moving = False
-                pos = self.now_bar_pos.eval(self.time)
-                self.now_bar.points = (pos, self.height, pos, self.win_size[1])
-        for ins in self.user_note_instructions:
-            self.remove(ins)
-        self.place_notes(actual=False)
-
-        return
+    def render_elements(self):
+        size = self.win_size[0] / 5
+        self.grid = CRectangle(cpos=(self.win_size[0] // 5, self.win_size[1] // 5),
+            csize=(size, size),
+        )
+        self.squares = []
+        square_size = size / 4
+        top_left = (self.grid.cpos[0] - size/2 + square_size/2, self.grid.cpos[1] + size/2 - square_size/2)
+        self.add(self.grid)
+        for i in range(len(pattern)):
+            for j in range(len(pattern[i])):
+                if pattern[i][j] == "X":
+                    sq = CRectangle(cpos=(top_left[0] + j * square_size, top_left[1] - i * square_size),
+                                        csize=(square_size, square_size),
+                                    )
+                    self.add(Color(rgb=(0,1,0)))
+                    self.add(sq)
+                    self.squares.append(sq)
 
     def on_layout(self, win_size):
         self.clear()
         self.win_size = win_size
         self.render_elements()
+
+
+class SequencerTile(InstructionGroup):
+    def __init__(self, size, position):
+        super().__init__()
+        instrument_id, self.beat = position
+        self.instrument_pitch = instruments[instrument_id]
+        self.beats[beat::4] = [Note(480, self.instrument_pitch) for _ in range(self.beats[beat::4])]
+        self.rest_beats = [Note(480, self.instrument_pitch) for _ in range(self.beats[beat::4])]
+
+    def on_button_press(self):
+        #toggle audio mapped to it as well as all audio around it
+        #toggle tile appearance
+        pass
+
+    def tiles_to_flip(self):
+        pass
 
 
 
