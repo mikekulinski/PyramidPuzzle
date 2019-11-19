@@ -70,6 +70,7 @@ class Tile(InstructionGroup):
 
 class Grid(InstructionGroup):
     def __init__(self, num_tiles=9, objects=[]):
+        super().__init__()
         self.win_size = (Window.width, Window.height)
         self.num_tiles = num_tiles
         self.objects = objects
@@ -112,6 +113,9 @@ class Grid(InstructionGroup):
         self.add(PopMatrix())
 
     def place_object(self, loc, icon, callback):
+        self.add(PushMatrix())
+        self.add(Translate(*self.pos))
+
         r, c = loc
         old_tile = self.tiles[r][c]
         self.remove(old_tile)
@@ -123,6 +127,8 @@ class Grid(InstructionGroup):
         )
         self.tiles[r][c] = new_tile
         self.add(new_tile)
+
+        self.add(PopMatrix())
 
     def get_tile(self, loc):
         r, c = loc
