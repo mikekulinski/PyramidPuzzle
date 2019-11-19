@@ -7,6 +7,7 @@ from src.grid import Grid, Switch
 from common.button import Button
 from src.piano_puzzle import MusicPuzzle
 from src.bass_puzzle import BassPuzzle
+from src.drums_puzzle import DrumsPuzzle
 
 FLOOR_SIZE = 9
 
@@ -20,7 +21,7 @@ class Game(InstructionGroup):
 
     def __init__(self):
         super().__init__()
-        self.puzzle = BassPuzzle()
+        self.puzzle = DrumsPuzzle()
 
     def on_player_input(self, button):
         self.puzzle.on_player_input(button)

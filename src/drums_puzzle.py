@@ -24,7 +24,10 @@ from kivy.uix.label import Label
 from kivy.graphics.instructions import InstructionGroup
 from kivy.graphics import Color, Ellipse, Rectangle, Line
 from kivy.graphics import PushMatrix, PopMatrix, Translate, Scale, Rotate
+from src.grid import Tile, Grid
 from src.puzzle_sound import Note, PuzzleSound
+from src.character import Character
+from common.button import Button
 from common.clock import (
     Clock,
     SimpleTempoMap,
@@ -87,10 +90,10 @@ class DrumsPuzzle(InstructionGroup):
         self.sound = PuzzleSound(self.beats, self.sched, self.synth, bank=128, preset=0)
 
         x_topleft, y_topleft = (2,5)
-        self.sequencer_tiles = []
+        sequencer_tiles = []
         for instrument_id in range(len(instruments)):
             for beat_id in range(4):
-                self.sequencer_tiles.append((
+                sequencer_tiles.append((
                     (x_topleft + beat_id, y_topleft - instrument_id),
                     lambda size, pos: SequencerTile(size, pos, beat_id, instrument_id, (x_topleft, y_topleft), self.beats),
                 ))
@@ -101,17 +104,35 @@ class DrumsPuzzle(InstructionGroup):
         )
         self.add(self.grid)
 
+        self.character = Character(self)
+        self.add(self.character)
 
     def on_update(self):
         self.audio.on_update()
 
+    def on_player_input(self, button):
+        if button in [Button.UP, Button.DOWN, Button.LEFT, Button.RIGHT]:
+            x, y = button.value
+            cur_location = self.character.grid_pos
+            new_location = (cur_location[0] + x, cur_location[1] + y)
+            self.character.move_player(new_location)
+        elif button == Button.A:
+            if isinstance(self.character.current_tile, SequencerTile):
+                self.character.current_tile.on_button_press()
+
     def on_button_press(self):
-        #character.curr_tile.on_button_press()
-        #character.curr_tile.get_neighbors(grid, 4)
-        pass
+        self.character.current_tile.on_button_press()
+        self.character.current_tile.toggle_neighbors(grid, 4)
 
     def on_layout(self, win_size):
+        self.remove(self.character)
+        self.remove(self.grid)
+        self.grid.on_layout(win_size)
+        
+        self.add(self.grid)
         self.drum_graphics.on_layout(win_size)
+        self.character.on_layout(win_size)
+        self.add(self.character)
 
     def on_p(self):
         self.sound.toggle()
@@ -150,7 +171,7 @@ class DrumPatternGraphics(InstructionGroup):
 
 class SequencerTile(Tile):
     active_color = Color(rgba=(0, 1, 0, 1))
-    inactive_color = Color(rgba=(0.8, 0.4, 0, 1))
+    inactive_color = Color(rgba=(0, 0.4, 0, 1))
     rest = Note(480, 0)
 
     def __init__(self, size, pos, beat_id, instrument_id, topleft, beats):
@@ -163,6 +184,7 @@ class SequencerTile(Tile):
         self.beat_note = Note(480, self.instrument_pitch)
         self.abs_pos = (topleft[0] + beat_id, topleft[1] - instrument_id)
         self.relative_pos = (beat_id, instrument_id)
+        self.set_color(color=SequencerTile.inactive_color)
 
     def on_button_press(self):
         #toggle audio mapped to it
@@ -171,14 +193,15 @@ class SequencerTile(Tile):
 
     def toggle(self):
         #flip tile, toggle audio
-        self.set_color(Switch.active_color)
         if self.beat_on:
             self.beats[self.beat_id::4] = [rest for _ in range(self.beats[self.beat_id::4])]
+            self.set_color(color=SequencerTile.inactive_color)
         else:
             self.beats[self.beat_id::4] = [self.beat_note for _ in range(self.beats[self.beat_id::4])]
+            self.set_color(SequencerTile.active_color)
         self.beat_on = not self.beat_on
         
-    def get_neighbors(self, grid, sequencer_size):
+    def toggle_neighbors(self, grid, sequencer_size):
         #look left
         x,y = self.relative_pos
         x_left = sequencer_size - 1 if x == 0 else x - 1
