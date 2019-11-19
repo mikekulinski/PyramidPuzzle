@@ -1,16 +1,13 @@
 # common imports
 import sys
 
-
+import pygame
 from kivy.core.window import Window
 
 from common.button import Button
 from common.core import BaseWidget, run
 from src.game import Game
 from src.piano_puzzle import MusicPuzzle
-import pygame
-
-sys.path.append("..")
 
 
 class Controller(BaseWidget):

@@ -1,12 +1,8 @@
 # common imports
-import sys
-
 from kivy.graphics import Color
 from kivy.graphics.instructions import InstructionGroup
 
 from common.gfxutil import CRectangle
-
-sys.path.append("..")
 
 
 FLOOR_SIZE = 9

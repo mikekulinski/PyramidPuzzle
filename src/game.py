@@ -1,14 +1,10 @@
 # common imports
-import sys
-
 from kivy.graphics.instructions import InstructionGroup
 
 from src.character import Character
 from src.grid import Grid
 
 FLOOR_SIZE = 9
-
-sys.path.append("..")
 
 
 class Game(InstructionGroup):
@@ -20,9 +16,9 @@ class Game(InstructionGroup):
         self.on_pitch_mode = on_pitch_mode
         self.on_rhythm_mode = on_rhythm_mode
         self.on_key_mode = on_key_mode
-        self.pitch_source = "../data/pitch_icon.png"
-        self.rhythm_source = "../data/rhythm_icon.png"
-        self.key_source = "../data/key_icon.png"
+        self.pitch_source = "./data/pitch_icon.png"
+        self.rhythm_source = "./data/rhythm_icon.png"
+        self.key_source = "./data/key_icon.jpeg"
 
         self.grid = Grid(
             num_tiles=9,

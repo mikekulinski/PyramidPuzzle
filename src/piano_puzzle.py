@@ -1,50 +1,14 @@
-import sys
-from random import choice, randint, random
+from random import choice
 
-import numpy as np
-from kivy.clock import Clock as kivyClock
 from kivy.core.window import Window
-from kivy.graphics import (
-    Color,
-    Ellipse,
-    Line,
-    PopMatrix,
-    PushMatrix,
-    Rectangle,
-    Rotate,
-    Scale,
-    Translate,
-)
+from kivy.graphics import Color, Ellipse, Line, Rectangle
 from kivy.graphics.instructions import InstructionGroup
-from kivy.uix.label import Label
 
 from common.audio import Audio
-from common.clock import (
-    AudioScheduler,
-    Clock,
-    SimpleTempoMap,
-    kTicksPerQuarter,
-    quantize_tick_up,
-    tick_str,
-)
-from common.core import BaseWidget, lookup, run
-from common.gfxutil import (
-    AnimGroup,
-    CEllipse,
-    CLabelRect,
-    CRectangle,
-    KFAnim,
-    topleft_label,
-)
-from common.mixer import Mixer
-from common.note import Envelope, NoteGenerator
+from common.clock import AudioScheduler, SimpleTempoMap
+from common.gfxutil import AnimGroup, CLabelRect, CRectangle, KFAnim
 from common.synth import Synth
-from common.wavegen import SpeedModulator, WaveGenerator
-from common.wavesrc import WaveBuffer, WaveFile, make_wave_buffers
 from src.puzzle_sound import Note, PuzzleSound
-
-sys.path.append("..")
-
 
 notes = (
     Note(480, 60),

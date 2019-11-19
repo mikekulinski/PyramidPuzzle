@@ -1,12 +1,8 @@
 # common imports
-import sys
-
 import numpy as np
 from kivy.core.window import Window
 from kivy.graphics import Color, Line, PopMatrix, PushMatrix, Rectangle, Translate
 from kivy.graphics.instructions import InstructionGroup
-
-sys.path.append("..")
 
 
 class Tile(InstructionGroup):
