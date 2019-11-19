@@ -1,0 +1,47 @@
+# common imports
+import sys
+
+from kivy.graphics.instructions import InstructionGroup
+
+from src.character import Character
+from src.grid import Grid
+
+FLOOR_SIZE = 9
+
+sys.path.append("..")
+
+
+class Game(InstructionGroup):
+    def __init__(self, on_pitch_mode, on_rhythm_mode, on_key_mode):
+        super().__init__()
+        self.pitch = (2, 2)
+        self.rhythm = (6, 4)
+        self.key = (2, 6)
+        self.on_pitch_mode = on_pitch_mode
+        self.on_rhythm_mode = on_rhythm_mode
+        self.on_key_mode = on_key_mode
+        self.pitch_source = "../data/pitch_icon.png"
+        self.rhythm_source = "../data/rhythm_icon.png"
+        self.key_source = "../data/key_icon.png"
+
+        self.grid = Grid(
+            num_tiles=9,
+            objects=[
+                (self.pitch, self.on_pitch_mode, self.pitch_source),
+                (self.rhythm, self.on_rhythm_mode, self.rhythm_source),
+                (self.key, self.on_key_mode, self.key_source),
+            ],
+        )
+
+        self.character = Character(self)
+        self.add(self.character)
+
+    def on_layout(self, win_size):
+        self.remove(self.grid)
+        self.remove(self.character)
+
+        self.grid.on_layout(win_size)
+        self.character.on_layout(win_size)
+
+        self.add(self.grid)
+        self.add(self.character)

@@ -2,36 +2,14 @@
 import sys
 
 sys.path.append("..")
-from common.core import BaseWidget, run
-from common.gfxutil import (
-    topleft_label,
-    Cursor3D,
-    AnimGroup,
-    KFAnim,
-    scale_point,
-    resize_topleft_label,
-    CEllipse,
-    CRectangle,
-)
-
-from kivy.graphics import Translate, PushMatrix, PopMatrix
-
-from common.synth import Synth
-from common.audio import Audio
-
-from kivy.core.window import Window
-from kivy.graphics.instructions import InstructionGroup
-import numpy as np
-
 import pygame
-
-from pygame.locals import JOYAXISMOTION, JOYBUTTONDOWN, JOYBUTTONUP, JOYHATMOTION, QUIT
-import time
-
-from src.character_movement import Game
-from src.piano_puzzle import MusicPuzzle
+from kivy.core.window import Window
 
 from common.button import Button
+from common.core import BaseWidget, run
+
+from src.game import Game
+from src.piano_puzzle import MusicPuzzle
 
 
 class Controller(BaseWidget):
