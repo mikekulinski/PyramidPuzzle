@@ -1,15 +1,16 @@
 # common imports
 import sys
 
-sys.path.append("..")
-import pygame
+
 from kivy.core.window import Window
 
 from common.button import Button
 from common.core import BaseWidget, run
-
 from src.game import Game
 from src.piano_puzzle import MusicPuzzle
+import pygame
+
+sys.path.append("..")
 
 
 class Controller(BaseWidget):
@@ -108,6 +109,7 @@ class Keyboard(BaseWidget):
 
     def on_key_down(self, keycode, modifiers):
         if self.state == "MOVEMENT":
+            x, y = 0, 0
             if keycode[1] == "left":
                 x, y = (-1, 0)
             elif keycode[1] == "right":
@@ -117,9 +119,10 @@ class Keyboard(BaseWidget):
             elif keycode[1] == "down":
                 x, y = (0, -1)
 
-            cur_location = self.game.character.grid_pos
-            new_location = (cur_location[0] + y, cur_location[1] + x)
-            self.game.character.move_player(new_location)
+            if x or y:
+                cur_location = self.game.character.grid_pos
+                new_location = (cur_location[0] + y, cur_location[1] + x)
+                self.game.character.move_player(new_location)
         else:
 
             if self.state == "PITCH":

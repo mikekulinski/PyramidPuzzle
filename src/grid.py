@@ -1,12 +1,12 @@
 # common imports
 import sys
-import os
 
-sys.path.append("..")
 import numpy as np
 from kivy.core.window import Window
-from kivy.graphics import Color, Line, Rectangle, PushMatrix, PopMatrix, Translate
+from kivy.graphics import Color, Line, PopMatrix, PushMatrix, Rectangle, Translate
 from kivy.graphics.instructions import InstructionGroup
+
+sys.path.append("..")
 
 
 class Tile(InstructionGroup):
@@ -118,11 +118,15 @@ class Grid(InstructionGroup):
         new_tile = Tile(
             size=(self.tile_side_len, self.tile_side_len),
             pos=(c * self.tile_side_len, r * self.tile_side_len),
-            on_stand=callback,
             icon_source=icon,
+            on_stand=callback,
         )
         self.tiles[r][c] = new_tile
         self.add(new_tile)
+
+    def get_tile(self, loc):
+        r, c = loc
+        return self.tiles[r][c]
 
     def on_layout(self, win_size):
         for row in self.tiles:

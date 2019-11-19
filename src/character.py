@@ -17,7 +17,7 @@ class Character(InstructionGroup):
         super().__init__()
         self.game = game
         self.grid_pos = (0, 0)
-        self.current_tile = self.game.tiles[self.grid_pos[0]][self.grid_pos[1]]
+        self.current_tile = self.game.grid.get_tile(self.grid_pos)
         self.sprite = CRectangle()
         self.add(self.sprite)
 
@@ -47,9 +47,9 @@ class Character(InstructionGroup):
         self.remove(self.sprite)
 
         self.grid_pos = new_pos
-        self.current_tile = self.game.tiles[self.grid_pos[0]][self.grid_pos[1]]
+        self.current_tile = self.game.grid.get_tile(self.grid_pos)
         tile_size = self.current_tile.size
-        self.pixel_pos = self.current_tile.pos + (tile_size // 2) + self.game.pos
+        self.pixel_pos = self.current_tile.pos + (tile_size // 2) + self.game.grid.pos
 
         self.size = tile_size // 3
 

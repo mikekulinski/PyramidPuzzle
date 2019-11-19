@@ -27,11 +27,12 @@ class Game(InstructionGroup):
         self.grid = Grid(
             num_tiles=9,
             objects=[
-                (self.pitch, self.on_pitch_mode, self.pitch_source),
-                (self.rhythm, self.on_rhythm_mode, self.rhythm_source),
-                (self.key, self.on_key_mode, self.key_source),
+                (self.pitch, self.pitch_source, self.on_pitch_mode),
+                (self.rhythm, self.rhythm_source, self.on_rhythm_mode),
+                (self.key, self.key_source, self.on_key_mode),
             ],
         )
+        self.add(self.grid)
 
         self.character = Character(self)
         self.add(self.character)
