@@ -2,7 +2,7 @@
 from kivy.graphics.instructions import InstructionGroup
 
 from src.character import Character
-from src.grid import Grid
+from src.grid import Grid, Switch
 
 FLOOR_SIZE = 9
 
@@ -10,23 +10,25 @@ FLOOR_SIZE = 9
 class Game(InstructionGroup):
     def __init__(self, on_pitch_mode, on_rhythm_mode, on_key_mode):
         super().__init__()
-        self.pitch = (2, 2)
-        self.rhythm = (6, 4)
-        self.key = (2, 6)
-        self.on_pitch_mode = on_pitch_mode
-        self.on_rhythm_mode = on_rhythm_mode
-        self.on_key_mode = on_key_mode
-        self.pitch_source = "./data/pitch_icon.png"
-        self.rhythm_source = "./data/rhythm_icon.png"
-        self.key_source = "./data/key_icon.jpeg"
+
+        self.pitch_switch = (
+            (2, 2),
+            lambda size, pos: Switch(size, pos, on_pitch_mode, "./data/pitch_icon.png"),
+        )
+        self.rhythm_switch = (
+            (6, 4),
+            lambda size, pos: Switch(
+                size, pos, on_rhythm_mode, "./data/rhythm_icon.png"
+            ),
+        )
+        self.key_switch = (
+            (2, 6),
+            lambda size, pos: Switch(size, pos, on_key_mode, "./data/key_icon.jpeg"),
+        )
 
         self.grid = Grid(
             num_tiles=9,
-            objects=[
-                (self.pitch, self.pitch_source, self.on_pitch_mode),
-                (self.rhythm, self.rhythm_source, self.on_rhythm_mode),
-                (self.key, self.key_source, self.on_key_mode),
-            ],
+            objects=[self.pitch_switch, self.rhythm_switch, self.key_switch],
         )
         self.add(self.grid)
 

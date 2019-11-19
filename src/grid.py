@@ -6,62 +6,58 @@ from kivy.graphics.instructions import InstructionGroup
 
 
 class Tile(InstructionGroup):
-    border_color = (0.6, 0.3, 0, 1)
-    base_color = (1, 0.9, 0.8, 1)
-    active_color = (1, 0.9, 0.8, 1)
-    inactive_color = (0.8, 0.4, 0, 1)
+    border_color = Color(rgba=(0.6, 0.3, 0, 1))
+    base_color = Color(rgba=(1, 0.9, 0.8, 1))
 
-    def __init__(
-        self, size=(150, 150), pos=(200, 200), icon_source=None, on_stand=None
-    ):
+    def __init__(self, size, pos):
         super().__init__()
-
-        self.on_stand = on_stand
-
-        # inside rectangle coordinates
         self.size = np.array(size)
         self.pos = np.array(pos)
-        self.icon_source = icon_source
 
-        # inside part
-        if self.on_stand is not None:
-            self.inside_color = Color(rgba=Tile.inactive_color)
-            self.is_switch = True
-            self.is_active = False
-        else:
-            self.inside_color = Color(rgba=Tile.base_color)
-            self.is_switch = False
-            self.is_active = False
+        self.inside_color = Tile.base_color
+        self.inside_rect = Rectangle(size=self.size, pos=self.pos)
         self.add(self.inside_color)
-        self.inside_rect = Rectangle(
-            size=self.size, pos=self.pos, source=self.icon_source
-        )
         self.add(self.inside_rect)
 
-        # border of button
-        self.add(Color(rgba=Tile.border_color))
-        self.add(Line(rectangle=(pos[0], pos[1], size[0], size[1])))
+        self.border_color = Tile.border_color
+        self.border_line = Line(rectangle=(pos[0], pos[1], size[0], size[1]))
+        self.add(self.border_color)
+        self.add(self.border_line)
+
+    def set_color(self, color, source=None):
+        self.remove(self.inside_rect)
+        self.remove(self.border_line)
+
+        self.inside_color = Color(rgba=color.rgba)
+        self.inside_rect = Rectangle(size=self.size, pos=self.pos, source=source)
+        self.add(self.inside_color)
+        self.add(self.inside_rect)
+
+        self.add(self.border_color)
+        self.add(self.border_line)
+
+
+class Switch(Tile):
+    active_color = Color(rgba=(1, 0.9, 0.8, 1))
+    inactive_color = Color(rgba=(0.8, 0.4, 0, 1))
+
+    def __init__(self, size, pos, on_stand, icon_source=None):
+        super().__init__(size, pos)
+
+        self.on_stand = on_stand
+        self.icon_source = icon_source
+
+        self.is_active = False
+        self.set_color(color=Switch.inactive_color, source=self.icon_source)
 
     def activate(self):
         self.is_active = True
-        self.set_color(Tile.active_color)
+        self.set_color(Switch.active_color)
         self.on_stand()
 
     def deactivate(self):
         self.is_active = False
-        self.set_color(Tile.inactive_color, self.icon_source)
-
-    def set_color(self, color, source=None):
-        self.remove(self.inside_rect)
-
-        self.inside_color = Color(rgba=color)
-        self.add(self.inside_color)
-        self.inside_rect = Rectangle(size=self.size, pos=self.pos, source=source)
-        self.add(self.inside_rect)
-
-        # border of button
-        self.add(Color(rgba=Tile.border_color))
-        self.add(Line(rectangle=(self.pos[0], self.pos[1], self.size[0], self.size[1])))
+        self.set_color(color=Switch.inactive_color, source=self.icon_source)
 
 
 class Grid(InstructionGroup):
@@ -73,8 +69,8 @@ class Grid(InstructionGroup):
 
         self.calculate_dims()
         self.place_tiles()
-        for loc, icon, callback in self.objects:
-            self.place_object(loc, icon, callback)
+        for loc, obj in self.objects:
+            self.place_object(loc, obj)
 
     def calculate_dims(self):
         # Finds the largest grid size that fits the current dimensions
@@ -108,18 +104,16 @@ class Grid(InstructionGroup):
 
         self.add(PopMatrix())
 
-    def place_object(self, loc, icon, callback):
+    def place_object(self, loc, obj):
         self.add(PushMatrix())
         self.add(Translate(*self.pos))
 
         r, c = loc
         old_tile = self.tiles[r][c]
         self.remove(old_tile)
-        new_tile = Tile(
+        new_tile = obj(
             size=(self.tile_side_len, self.tile_side_len),
             pos=(c * self.tile_side_len, r * self.tile_side_len),
-            icon_source=icon,
-            on_stand=callback,
         )
         self.tiles[r][c] = new_tile
         self.add(new_tile)
@@ -139,5 +133,5 @@ class Grid(InstructionGroup):
 
         self.calculate_dims()
         self.place_tiles()
-        for loc, icon, callback in self.objects:
-            self.place_object(loc, icon, callback)
+        for loc, obj in self.objects:
+            self.place_object(loc, obj)
