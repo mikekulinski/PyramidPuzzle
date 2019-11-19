@@ -29,6 +29,7 @@ class Mummy(Tile):
 class BassPuzzle(InstructionGroup):
     def __init__(self):
         super().__init__()
+        self.object_locs = {(4, 8)}
 
         self.grid = Grid(num_tiles=9)
         self.add(self.grid)
@@ -38,6 +39,16 @@ class BassPuzzle(InstructionGroup):
         # Add the character to the game
         self.character = Character(self)
         self.add(self.character)
+
+    def is_valid_pos(self, pos):
+        if pos in self.object_locs:
+            return False
+        elif pos[0] < 0 or pos[0] >= self.grid.num_tiles:
+            return False
+        elif pos[1] < 0 or pos[1] >= self.grid.num_tiles:
+            return False
+
+        return True
 
     def place_mummy(self, loc):
         self.add(PushMatrix())
@@ -61,6 +72,7 @@ class BassPuzzle(InstructionGroup):
             x, y = button.value
             cur_location = self.character.grid_pos
             new_location = (cur_location[0] + x, cur_location[1] + y)
+            self.character.change_direction(button)
             self.character.move_player(new_location)
         elif button == Button.A:
             # TODO keep track of direction and try to interact in front of character

@@ -11,8 +11,8 @@ class Tile(InstructionGroup):
 
     def __init__(self, size, pos):
         super().__init__()
-        self.size = np.array(size)
-        self.pos = np.array(pos)
+        self.size = size
+        self.pos = pos
 
         self.inside_color = Tile.base_color
         self.inside_rect = Rectangle(size=self.size, pos=self.pos)
