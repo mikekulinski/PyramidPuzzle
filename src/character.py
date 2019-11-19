@@ -3,7 +3,7 @@ from kivy.graphics import Color
 from kivy.graphics.instructions import InstructionGroup
 
 from common.gfxutil import CRectangle
-
+from src.grid import Switch
 
 FLOOR_SIZE = 9
 
@@ -37,7 +37,7 @@ class Character(InstructionGroup):
     def move_player(self, grid_pos):
         new_pos = self.get_valid_pos(grid_pos)
 
-        if self.current_tile.is_switch and self.current_tile.is_active:
+        if isinstance(self.current_tile, Switch) and self.current_tile.is_active:
             self.current_tile.deactivate()
 
         self.remove(self.sprite)
@@ -54,7 +54,7 @@ class Character(InstructionGroup):
         self.sprite = CRectangle(cpos=self.pixel_pos, csize=self.size)
         self.add(self.sprite)
 
-        if self.current_tile.is_switch and not self.current_tile.is_active:
+        if isinstance(self.current_tile, Switch) and not self.current_tile.is_active:
             self.current_tile.activate()
 
     def on_layout(self, win_size):
