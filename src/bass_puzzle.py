@@ -29,12 +29,11 @@ class Mummy(Tile):
 class BassPuzzle(InstructionGroup):
     def __init__(self):
         super().__init__()
+        self.puzzle_on = False
 
         self.grid = Grid(num_tiles=9)
         self.add(self.grid)
 
-        self.mummy = self.create_mummy((4, 8))
-        self.objects = {(4, 8): self.mummy}
         self.place_objects()
 
         # Add the character to the game
@@ -59,20 +58,35 @@ class BassPuzzle(InstructionGroup):
         return Mummy(size, pos, self.on_interact_mummy, "./data/mummy.jpg")
 
     def place_objects(self):
+        self.objects = {}
         self.mummy = self.create_mummy((4, 8))
-        self.objects = {(4, 8): self.mummy}
+        self.objects[(4, 8)] = self.mummy
+
+        if self.puzzle_on:
+            self.m1 = self.create_mummy((1, 4))
+            self.m2 = self.create_mummy((3, 4))
+            self.m3 = self.create_mummy((5, 4))
+            self.m4 = self.create_mummy((7, 4))
+
+            self.objects[(1, 4)] = self.m1
+            self.objects[(3, 4)] = self.m2
+            self.objects[(5, 4)] = self.m3
+            self.objects[(7, 4)] = self.m4
 
         self.add(PushMatrix())
         self.add(Translate(*self.grid.pos))
 
         for pos, obj in self.objects.items():
-            print(obj)
             self.add(obj)
 
         self.add(PopMatrix())
 
     def on_interact_mummy(self):
+        self.puzzle_on = True
         print("Interacted with mummy!")
+        for pos, obj in self.objects.items():
+            self.remove(obj)
+        self.place_objects()
 
     def on_update(self):
         pass
