@@ -59,6 +59,12 @@ class Switch(Tile):
         self.is_active = False
         self.set_color(color=Switch.inactive_color, source=self.icon_source)
 
+class DoorTile(Tile):
+    def __init__(self, size, pos, other_room):
+        super().__init__(size, pos)
+        self.set_color(color=Color(rgba=(0, 0, 0, 1)))
+        self.other_room = other_room
+
 
 class Grid(InstructionGroup):
     def __init__(self, num_tiles=9, objects=[]):

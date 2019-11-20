@@ -24,7 +24,7 @@ from kivy.uix.label import Label
 from kivy.graphics.instructions import InstructionGroup
 from kivy.graphics import Color, Ellipse, Rectangle, Line
 from kivy.graphics import PushMatrix, PopMatrix, Translate, Scale, Rotate
-from src.grid import Tile, Grid
+from src.grid import Tile, Grid, DoorTile
 from src.puzzle_sound import Note, PuzzleSound
 from src.character import Character
 from common.button import Button
@@ -60,8 +60,9 @@ all_rests = [[Note(480, 0) for i in instruments] for _ in range(8)]
 #receive tile, toggle that tile and the surrounding ones
 
 class DrumsPuzzle(InstructionGroup):
-    def __init__(self):
+    def __init__(self, center_room):
         super().__init__()
+        self.center_room = center_room
         self.drum_graphics = DrumPatternGraphics(pattern)
         self.add(self.drum_graphics)
     
@@ -101,6 +102,8 @@ class DrumsPuzzle(InstructionGroup):
 
     def place_objects(self):
         self.objects = {}
+        size = (self.grid.tile_side_len, self.grid.tile_side_len)
+        self.objects[(4, 0)] = DoorTile(size, self.grid.grid_to_pixel((4, 0)), self.center_room)
         x_topleft, y_topleft = (2,5)
 
         self.sequencer_tiles = []
@@ -139,6 +142,9 @@ class DrumsPuzzle(InstructionGroup):
             new_location = (cur_location[0] + x, cur_location[1] + y)
             self.character.change_direction(button.value)
             self.character.move_player(new_location)
+            if self.character.grid_pos in self.objects:
+                if isinstance(self.objects[self.character.grid_pos], DoorTile):
+                    return self.objects[self.character.grid_pos].other_room
         elif button == Button.A:
             if self.character.grid_pos in self.objects:
                 if isinstance(self.objects[self.character.grid_pos], SequencerTile):

@@ -7,8 +7,12 @@ from kivy.graphics.instructions import InstructionGroup
 from common.audio import Audio
 from common.clock import AudioScheduler, SimpleTempoMap
 from common.gfxutil import AnimGroup, CLabelRect, CRectangle, KFAnim
+from kivy.graphics import PushMatrix, PopMatrix, Translate, Scale, Rotate
 from common.synth import Synth
 from src.puzzle_sound import Note, PuzzleSound
+from src.character import Character
+from src.grid import Grid, Switch, DoorTile
+from common.button import Button
 
 notes = (
     Note(480, 60),
@@ -45,8 +49,9 @@ keys = {
 
 
 class MusicPuzzle(InstructionGroup):
-    def __init__(self):
+    def __init__(self, center_room):
         super().__init__()
+        self.center_room = center_room
         self.animations = AnimGroup()
         self.music_bar = MusicBar(notes, user_notes)
         self.animations.add(self.music_bar)
@@ -62,6 +67,13 @@ class MusicPuzzle(InstructionGroup):
         self.audio.set_generator(self.sched)
         self.actual_sound = PuzzleSound(notes, self.sched, self.synth)
         self.user_sound = PuzzleSound(user_notes, self.sched, self.synth)
+
+        self.grid = Grid(num_tiles=9)
+        self.add(self.grid)
+        self.place_objects()
+
+        self.character = Character(self)
+        self.add(self.character)
 
         self.actual_key = "C"
         self.user_key = choice(key_names)
@@ -80,6 +92,45 @@ class MusicPuzzle(InstructionGroup):
         self.game_over_text = CLabelRect(
             (Window.width // 2, Window.height // 2), "You Win!", 70
         )
+        self.state = "MOVEMENT"
+
+    def is_valid_pos(self, pos):
+        if pos[0] < 0 or pos[0] >= self.grid.num_tiles:
+            return False
+        elif pos[1] < 0 or pos[1] >= self.grid.num_tiles:
+            return False
+
+        return True
+
+    def get_tile(self, pos):
+        assert self.is_valid_pos(pos)
+        return self.grid.get_tile(pos)
+
+    def on_pitch_mode(self):
+        self.state = "PITCH"
+    def on_rhythm_mode(self):
+        self.state = "RHYTHM"
+    def on_key_mode(self):
+        self.state = "KEY"
+
+    def place_objects(self):
+        self.objects = {}
+
+        size = (self.grid.tile_side_len, self.grid.tile_side_len)
+        pos = self.grid.grid_to_pixel((2, 2))
+
+        self.objects[(2, 2)] = Switch(size, self.grid.grid_to_pixel((2, 2)), self.on_pitch_mode, "./data/pitch_icon.png")
+        self.objects[(4, 6)] = Switch(size, self.grid.grid_to_pixel((4, 6)), self.on_rhythm_mode, "./data/rhythm_icon.png")
+        self.objects[(6, 2)] = Switch(size, self.grid.grid_to_pixel((6, 2)), self.on_key_mode, "./data/key_icon.jpeg")
+        self.objects[(8, 4)] = DoorTile(size, self.grid.grid_to_pixel((8, 4)), self.center_room)
+
+        self.add(PushMatrix())
+        self.add(Translate(*self.grid.pos))
+
+        for pos, obj in self.objects.items():
+            self.add(obj)
+
+        self.add(PopMatrix())
 
     def on_update(self):
         self.animations.on_update()
@@ -99,6 +150,17 @@ class MusicPuzzle(InstructionGroup):
             self.user_sound.toggle()
 
     def on_layout(self, win_size):
+        self.remove(self.character)
+        self.remove(self.grid)
+        self.grid.on_layout((win_size[0],.75*win_size[1]))
+        for pos, obj in self.objects.items():
+            self.remove(obj)
+        
+        self.add(self.grid)
+        self.place_objects()
+        self.character.on_layout(win_size)
+        self.add(self.character)
+
         self.music_bar.on_layout(win_size)
         self.remove(self.key_label)
         self.key_label = CLabelRect(
@@ -116,6 +178,46 @@ class MusicPuzzle(InstructionGroup):
         self.game_over_text = CLabelRect(
             (win_size[0] // 2, win_size[1] // 2), "You Win!", 70
         )
+
+    def on_player_input(self, button):
+
+        if self.state == "MOVEMENT":
+            if button in [Button.UP, Button.DOWN, Button.LEFT, Button.RIGHT]:
+                x, y = button.value
+                cur_location = self.character.grid_pos
+                new_location = (cur_location[0] + x, cur_location[1] + y)
+                self.character.change_direction(button.value)
+                self.character.move_player(new_location)
+                if self.character.grid_pos in self.objects:
+                    if isinstance(self.objects[self.character.grid_pos], DoorTile):
+                        return self.objects[self.character.grid_pos].other_room
+                    self.objects[self.character.grid_pos].activate()
+        else:
+            if self.state == "PITCH":
+                if button == Button.UP:
+                    self.on_up_arrow()
+                elif button == Button.DOWN:
+                    self.on_down_arrow()
+            elif self.state == "RHYTHM":
+                if button == Button.LEFT:
+                    self.on_left_arrow()
+                elif button == Button.RIGHT:
+                    self.on_right_arrow()
+            elif self.state == "KEY":
+                if button == Button.LEFT:
+                    self.on_L()
+                elif button == Button.RIGHT:
+                    self.on_R()
+
+            if button == Button.MINUS:
+                self.puzzle.play(actual=True)
+            elif button == Button.PLUS:
+                self.puzzle.play(actual=False)
+            elif button == Button.B:
+                # Exit puzzle play and go back to movement
+                if self.character.grid_pos in self.objects:
+                    self.objects[self.character.grid_pos].deactivate()
+                self.state = "MOVEMENT"
 
     def on_up_arrow(self):
         for note in user_notes:
