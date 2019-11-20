@@ -36,8 +36,6 @@ class MainWidget(BaseWidget) :
         self.label = topleft_label()
         self.add_widget(self.label)
 
-
-
     def on_key_down(self, keycode, modifiers):
         if keycode[1] == 'p':
             self.sound.toggle()
@@ -77,7 +75,8 @@ class PuzzleSound(object):
                 self.dur_midi.append([(n.get_dur(), n.get_pitch()) for n in note])
         if self.noteseq:
             self.noteseq.stop()
-        self.noteseq = NoteSequencer(
+        else:
+            self.noteseq = NoteSequencer(
             self.sched,
             self.synth,
             1,
@@ -87,6 +86,8 @@ class PuzzleSound(object):
             callback_ons=callback_ons,
             callback_offs=callback_offs,
         )
+        self.noteseq.notes = self.dur_midi
+        
 
     def toggle(self):
         self.noteseq.toggle()
@@ -238,7 +239,6 @@ class NoteSequencer(object):
             while notes_list:
                 length, pitch = notes_list.pop(0)
                 if pitch != 0: # pitch 0 is a rest
-                    print(pitch)
                     self.synth.noteon(self.channel, pitch, self.vel)  # play note
                     self.sched.post_at_tick(self._note_off, tick + length * .9, pitch) # note off a bit later - slightly detached. 
 
