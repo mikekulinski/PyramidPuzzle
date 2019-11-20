@@ -81,7 +81,9 @@ class PuzzleSound(object):
 
         self.soundplaying = False
 
-    def update_sounds(self, notes, callback_ons=[], callback_offs=[]):
+    def update_sounds(
+        self, notes, callback_ons=[], callback_offs=[], finished_playing=None
+    ):
         self.letters = []
         self.dur_midi = []
         self.notes = notes
@@ -96,6 +98,7 @@ class PuzzleSound(object):
             self.dur_midi,
             callback_ons=callback_ons,
             callback_offs=callback_offs,
+            finished_playing=finished_playing,
         )
 
     def toggle(self):
@@ -191,6 +194,7 @@ class NoteSequencer(object):
         callback_offs=[],
         vel=60,
         loop=False,
+        finished_playing=None,
     ):
         super(NoteSequencer, self).__init__()
         self.sched = sched
@@ -203,6 +207,7 @@ class NoteSequencer(object):
         self.playing = False
         self.callback_ons = callback_ons
         self.callback_offs = callback_offs
+        self.finished_playing = finished_playing
 
         self.cmd = None
         self.idx = 0
@@ -234,7 +239,7 @@ class NoteSequencer(object):
 
         # post the first note on the next quarter-note:
         now = self.sched.get_tick()
-        self.cmd = self.sched.post_at_tick(self.simon_says_on, now)
+        self.cmd = self.sched.post_at_tick(self.simon_says_on, now + 240)
 
     def stop(self):
         if not self.playing:
@@ -289,6 +294,8 @@ class NoteSequencer(object):
             self.playing = True
         else:
             self.playing = False
+            if self.finished_playing:
+                self.finished_playing()
 
     def simon_says_off(self, tick, pitch):
         self.synth.noteoff(self.channel, pitch)
@@ -297,7 +304,7 @@ class NoteSequencer(object):
         self.idx += 1
 
         now = self.sched.get_tick()
-        self.cmd = self.sched.post_at_tick(self.simon_says_on, now)
+        self.cmd = self.sched.post_at_tick(self.simon_says_on, now + 240)
 
 
 if __name__ == "__main__":

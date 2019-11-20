@@ -1,21 +1,16 @@
-from random import choice
-
 from kivy.core.window import Window
-from kivy.graphics import Color, Line, PopMatrix, PushMatrix, Rectangle, Translate
+from kivy.graphics import Color, PopMatrix, PushMatrix, Translate
 from kivy.graphics.instructions import InstructionGroup
 
-from common.audio import Audio
 from common.button import Button
-from common.clock import AudioScheduler, SimpleTempoMap
-from common.gfxutil import AnimGroup, CLabelRect, CRectangle, KFAnim
-from common.synth import Synth
-from src.grid import Tile, Grid
-from src.puzzle_sound import Note, PuzzleSound
+from common.gfxutil import CLabelRect, CRectangle
 from src.character import Character
+from src.grid import Grid, Tile
+from src.puzzle_sound import Note, PuzzleSound
 
 
 class SimonSays(InstructionGroup):
-    def __init__(self, size, pos, color, idx, on_interact):
+    def __init__(self, size, pos, color, idx, on_interact, puzzle):
         super().__init__()
         self.size = size
         self.pos = pos
@@ -25,6 +20,7 @@ class SimonSays(InstructionGroup):
         self.active = False
         self.idx = idx
         self.on_interact = on_interact
+        self.puzzle = puzzle
 
         self.current_color = Color(rgba=self.unactive_color.rgba)
         self.rect = CRectangle(csize=self.size, cpos=self.pos)
@@ -50,6 +46,10 @@ class SimonSays(InstructionGroup):
     def deactivate(self):
         self.set_color(color=self.unactive_color)
 
+    def on_finished_playing(self):
+        print("Done playing audio")
+        self.puzzle.play_game(self.idx)
+
 
 class Mummy(Tile):
     def __init__(self, size, pos, on_interact, icon_source):
@@ -67,6 +67,11 @@ class BassPuzzle(InstructionGroup):
     def __init__(self):
         super().__init__()
         self.puzzle_on = False
+        self.note_index = 1
+        self.cpu_turn = True
+        self.user_sequence = []
+        self.correct_sequence = [0, 1, 3, 2, 3]
+
         self.colors = [
             Color(rgb=(0, 1, 0)),  # Green
             Color(rgb=(1, 0, 0)),  # Red
@@ -74,6 +79,16 @@ class BassPuzzle(InstructionGroup):
             Color(rgb=(0, 0, 1)),  # Blue
             Color(rgb=(1, 165 / 255, 0)),  # Orange
         ]
+
+        self.game_over_window_color = Color(rgba=(1, 1, 1, 1))
+        self.game_over_window = CRectangle(
+            cpos=(Window.width // 2, Window.height // 2),
+            csize=(Window.width // 2, Window.height // 5),
+        )
+        self.game_over_text_color = Color(rgba=(0, 0, 0, 1))
+        self.game_over_text = CLabelRect(
+            (Window.width // 2, Window.height // 2), "You Win!", 70
+        )
 
         # Setup audio
         self.notes = [Note(480, p) for p in (60, 64, 67, 72)]
@@ -114,7 +129,7 @@ class BassPuzzle(InstructionGroup):
             pos[1] + self.grid.tile_side_len // 2,
         )
         color = self.colors[idx]
-        return SimonSays(size, pos, color, idx, self.on_interact_simon_says)
+        return SimonSays(size, pos, color, idx, self.on_interact_simon_says, self)
 
     def place_objects(self):
         self.objects = {}
@@ -137,6 +152,41 @@ class BassPuzzle(InstructionGroup):
 
         self.add(PopMatrix())
 
+    def play_game(self, idx=None):
+        if self.note_index == len(self.correct_sequence) + 1:
+            self.game_over()
+            return
+
+        if self.cpu_turn:
+            notes = []
+            cb_ons = []
+            cb_offs = []
+            for i in self.correct_sequence[: self.note_index]:
+                notes.append(self.notes[i])
+                cb_ons.append(self.simons[i].activate)
+                cb_offs.append(self.simons[i].deactivate)
+
+            self.audio.update_sounds(notes, cb_ons, cb_offs)
+            self.audio.noteseq.start_simon_says()
+            self.cpu_turn = False
+            self.user_sequence = []
+        else:
+            if idx == self.correct_sequence[len(self.user_sequence)]:
+                self.user_sequence.append(idx)
+                if len(self.user_sequence) == (self.note_index):
+                    self.note_index += 1
+                    self.cpu_turn = True
+                    self.play_game()
+            else:
+                self.cpu_turn = True
+                self.play_game()
+
+    def game_over(self):
+        self.add(self.game_over_window_color)
+        self.add(self.game_over_window)
+        self.add(self.game_over_text_color)
+        self.add(self.game_over_text)
+
     def on_interact_mummy(self):
         print("Interacted with mummy!")
         self.puzzle_on = True
@@ -144,19 +194,19 @@ class BassPuzzle(InstructionGroup):
             self.remove(obj)
         self.place_objects()
 
-        self.audio.update_sounds(
-            self.notes,
-            [s.activate for s in self.simons],
-            [s.deactivate for s in self.simons],
-        )
-        self.audio.noteseq.start_simon_says()
+        self.note_index = 1
+        self.cpu_turn = True
+        self.play_game()
 
     def on_interact_simon_says(self, idx):
         print("Playing simon says")
-        self.audio.noteseq.simon_says_on(
-            self.notes[idx].get_pitch(), self.simons[idx].deactivate
+        self.audio.update_sounds(
+            [self.notes[idx]],
+            [self.simons[idx].activate],
+            [self.simons[idx].deactivate],
+            self.simons[idx].on_finished_playing,
         )
-        self.simons[idx].activate()
+        self.audio.noteseq.start_simon_says()
 
     def on_update(self):
         self.audio.on_update()
@@ -184,3 +234,13 @@ class BassPuzzle(InstructionGroup):
 
         self.character.on_layout(win_size)
         self.add(self.character)
+
+        self.game_over_window_color = Color(rgba=(1, 1, 1, 1))
+        self.game_over_window = CRectangle(
+            cpos=(Window.width // 2, Window.height // 2),
+            csize=(Window.width // 2, Window.height // 5),
+        )
+        self.game_over_text_color = Color(rgba=(0, 0, 0, 1))
+        self.game_over_text = CLabelRect(
+            (Window.width // 2, Window.height // 2), "You Win!", 70
+        )
