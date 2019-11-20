@@ -144,6 +144,13 @@ class BassPuzzle(InstructionGroup):
             self.remove(obj)
         self.place_objects()
 
+        self.audio.update_sounds(
+            self.notes,
+            [s.activate for s in self.simons],
+            [s.deactivate for s in self.simons],
+        )
+        self.audio.noteseq.start_simon_says()
+
     def on_interact_simon_says(self, idx):
         print("Playing simon says")
         self.audio.noteseq.simon_says_on(

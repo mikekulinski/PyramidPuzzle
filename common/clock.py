@@ -243,12 +243,12 @@ class AudioScheduler(object):
         return self.tempo_map.time_to_tick(self.get_time())
 
     # add a record for the function to call at the particular tick
-    def post_at_tick(self, func, tick, arg=None, arg1=None):
+    def post_at_tick(self, func, tick, arg=None):
         now_time = self.get_time()
         post_time = self.tempo_map.tick_to_time(tick)
 
         # create a command to hold the function/arg and sort by tick
-        cmd = Command(tick, func, arg, arg1)
+        cmd = Command(tick, func, arg)
         self.commands.append(cmd)
         self.commands.sort(key=lambda x: x.tick)
         return cmd
@@ -268,19 +268,18 @@ class AudioScheduler(object):
 
 
 class Command(object):
-    def __init__(self, tick, func, arg, arg1):
+    def __init__(self, tick, func, arg):
         super(Command, self).__init__()
         self.tick = int(tick)
         self.func = func
         self.arg = arg
-        self.arg1 = arg1
         self.did_it = False
 
     def execute(self):
         # ensure that execute only gets called once.
         if not self.did_it:
             self.did_it = True
-            self.func(self.tick, self.arg, self.arg1)
+            self.func(self.tick, self.arg)
 
     def __repr__(self):
         return "cmd:%d" % self.tick
