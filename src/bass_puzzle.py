@@ -75,6 +75,11 @@ class BassPuzzle(InstructionGroup):
             Color(rgb=(1, 165 / 255, 0)),  # Orange
         ]
 
+        # Setup audio
+        self.notes = [Note(480, p) for p in (60, 64, 67, 72)]
+        self.audio = PuzzleSound(self.notes)
+
+        # Setup visuals
         self.grid = Grid(num_tiles=9)
         self.add(self.grid)
 
@@ -141,10 +146,13 @@ class BassPuzzle(InstructionGroup):
 
     def on_interact_simon_says(self, idx):
         print("Playing simon says")
+        self.audio.noteseq.simon_says_on(
+            self.notes[idx].get_pitch(), self.simons[idx].deactivate
+        )
         self.simons[idx].activate()
 
     def on_update(self):
-        pass
+        self.audio.on_update()
 
     def on_player_input(self, button):
         if button in [Button.UP, Button.DOWN, Button.LEFT, Button.RIGHT]:

@@ -68,10 +68,14 @@ class MainWidget(BaseWidget):
 
 
 class PuzzleSound(object):
-    def __init__(self, notes, sched, synth):
+    def __init__(self, notes):
         super().__init__()
-        self.sched = sched
-        self.synth = synth
+
+        self.audio = Audio(2)
+        self.synth = Synth("./data/FluidR3_GM.sf2")
+        self.sched = AudioScheduler(SimpleTempoMap(120))
+        self.sched.set_generator(self.synth)
+        self.audio.set_generator(self.sched)
 
         self.update_sounds(notes)
 
@@ -88,6 +92,9 @@ class PuzzleSound(object):
 
     def toggle(self):
         self.noteseq.toggle()
+
+    def on_update(self):
+        self.audio.on_update()
 
 
 class Note(object):
@@ -108,10 +115,10 @@ class Note(object):
             "A#",
             "B",
         ]
-        ocatave = int(midipitch / 12) - 1
+        octave = int(midipitch / 12) - 1
         noteidx = midipitch % 12
 
-        self.noteletter = self.allnotes[noteidx] + str(ocatave)
+        self.noteletter = self.allnotes[noteidx] + str(octave)
         self.midipitch = midipitch
         self.notedur = notedur
 
@@ -119,9 +126,9 @@ class Note(object):
         self.flat = False
 
     def set_note(self, pitch):
-        ocatave = int(pitch / 12) - 1
+        octave = int(pitch / 12) - 1
         noteidx = pitch % 12
-        self.noteletter = self.allnotes[noteidx] + str(ocatave)
+        self.noteletter = self.allnotes[noteidx] + str(octave)
 
         self.midipitch = pitch
 
@@ -163,7 +170,7 @@ class Note(object):
 
 class NoteSequencer(object):
     """Plays a single Sequence of notes. The sequence is a python list containing
-	notes. Each note is (dur, pitch)."""
+    notes. Each note is (dur, pitch)."""
 
     def __init__(self, sched, synth, channel, program, notes, vel=60, loop=False):
         super(NoteSequencer, self).__init__()
@@ -179,12 +186,13 @@ class NoteSequencer(object):
         self.cmd = None
         self.idx = 0
 
+        self.synth.program(self.channel, self.program[0], self.program[1])
+
     def start(self):
         if self.playing:
             return
 
         self.playing = True
-        self.synth.program(self.channel, self.program[0], self.program[1])
 
         # start from the beginning
         self.idx = 0
@@ -208,7 +216,7 @@ class NoteSequencer(object):
         else:
             self.start()
 
-    def _note_on(self, tick, ignore):
+    def _note_on(self, tick, ignore, ignore2):
         # if looping, go back to beginning
         if self.loop and self.idx >= len(self.notes):
             self.idx = 0
@@ -228,9 +236,22 @@ class NoteSequencer(object):
         else:
             self.playing = False
 
-    def _note_off(self, tick, pitch):
+    def _note_off(self, tick, pitch, ignore):
         # terminate current note:
         self.synth.noteoff(self.channel, pitch)
+
+    def simon_says_on(self, pitch, callback):
+        self.synth.noteon(self.channel, pitch, self.vel)
+        now = self.sched.get_tick()
+        self.cmd = self.sched.post_at_tick(
+            self.simon_says_off, now + 480, pitch, callback
+        )
+        self.playing = True
+
+    def simon_says_off(self, tick, pitch, callback):
+        self.synth.noteoff(self.channel, pitch)
+        self.playing = False
+        callback()
 
 
 if __name__ == "__main__":
