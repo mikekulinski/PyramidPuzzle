@@ -54,7 +54,7 @@ pattern = [
 
 #hi-hat, snare, bass drum, tambourine
 instruments = [42, 38, 36, 54]
-all_rests = [Note(480, 42) for _ in range(8)]
+all_rests = [[Note(480, 0) for i in instruments] for _ in range(8)]
 
 #character knows which tile its on
 #receive tile, toggle that tile and the surrounding ones
@@ -74,24 +74,44 @@ class DrumsPuzzle(InstructionGroup):
         self.audio.set_generator(self.sched)
     
         self.beats = all_rests
-        self.sound = PuzzleSound(self.beats, self.sched, self.synth, bank=128, preset=0)
+        self.sound = PuzzleSound(self.beats, self.sched, self.synth, bank=128, loop=True)
 
-        x_topleft, y_topleft = (2,5)
-        sequencer_tiles = []
-        for instrument_id in range(len(instruments)):
-            for beat_id in range(4):
-                sequencer_tiles.append((
-                    (x_topleft + beat_id, y_topleft - instrument_id),
-                    lambda size, pos, beat_id=beat_id, instrument_id=instrument_id: SequencerTile(size, pos, beat_id, instrument_id, (x_topleft, y_topleft), self.beats),
-                ))
-        self.grid = Grid(
-            num_tiles=9,
-            objects=sequencer_tiles,
-        )
+        self.grid = Grid(num_tiles=9)
         self.add(self.grid)
+        self.place_objects()
 
         self.character = Character(self)
         self.add(self.character)
+
+    def is_valid_pos(self, pos):
+        if pos[0] < 0 or pos[0] >= self.grid.num_tiles:
+            return False
+        elif pos[1] < 0 or pos[1] >= self.grid.num_tiles:
+            return False
+
+        return True
+
+    def get_tile(self, pos):
+        assert self.is_valid_pos(pos)
+        return self.grid.get_tile(pos)
+
+    def place_objects(self):
+        self.objects = {}
+        x_topleft, y_topleft = (2,5)
+
+        for instrument_id in range(len(instruments)):
+            for beat_id in range(4):
+                size = (self.grid.tile_side_len, self.grid.tile_side_len)
+                pos = self.grid.grid_to_pixel((x_topleft + beat_id, y_topleft - instrument_id))
+                self.objects[(x_topleft + beat_id, y_topleft - instrument_id)] = SequencerTile(size, pos, beat_id, instrument_id, (x_topleft, y_topleft), self.beats)
+
+        self.add(PushMatrix())
+        self.add(Translate(*self.grid.pos))
+
+        for pos, obj in self.objects.items():
+            self.add(obj)
+
+        self.add(PopMatrix())
 
     def on_update(self):
         self.audio.on_update()
@@ -101,30 +121,34 @@ class DrumsPuzzle(InstructionGroup):
             x, y = button.value
             cur_location = self.character.grid_pos
             new_location = (cur_location[0] + x, cur_location[1] + y)
+            self.character.change_direction(button.value)
             self.character.move_player(new_location)
         elif button == Button.A:
-            if isinstance(self.character.current_tile, SequencerTile):
-                self.on_button_press()
+            if self.character.grid_pos in self.objects:
+                if isinstance(self.objects[self.character.grid_pos], SequencerTile):
+                    self.on_button_press()
         elif button == Button.B:
-            self.on_p()
+            self.sound.toggle()
 
     def on_button_press(self):
-        self.character.current_tile.on_button_press()
-        self.character.current_tile.toggle_neighbors(self.grid, 4)
+        self.objects[self.character.grid_pos].on_button_press()
+        self.objects[self.character.grid_pos].toggle_neighbors(self.objects, 4)
         self.sound.update_sounds(self.beats)
+        self.sound.toggle()
 
     def on_layout(self, win_size):
         self.remove(self.character)
         self.remove(self.grid)
         self.grid.on_layout(win_size)
+        for pos, obj in self.objects.items():
+            self.remove(obj)
         
         self.add(self.grid)
         self.drum_graphics.on_layout(win_size)
+        self.place_objects()
         self.character.on_layout(win_size)
         self.add(self.character)
-
-    def on_p(self):
-        self.sound.toggle()
+        
 
 class DrumPatternGraphics(InstructionGroup):
     def __init__(self, pattern):
@@ -184,14 +208,20 @@ class SequencerTile(Tile):
     def toggle(self):
         #flip tile, toggle audio
         if self.beat_on:
-            self.beats[self.beat_id::4] = [SequencerTile.rest for _ in range(len(self.beats[self.beat_id::4]))]
+            self.set_beats(rest=True)
             self.set_color(color=SequencerTile.inactive_color)
         else:
-            self.beats[self.beat_id::4] = [self.beat_note for _ in range(len(self.beats[self.beat_id::4]))]
+            self.set_beats(rest=False)
             self.set_color(SequencerTile.active_color)
         self.beat_on = not self.beat_on
+
+    def set_beats(self, rest=True):
+        for i in range(len(self.beats)):
+            for j in range(len(self.beats)):
+                if self.beat_id % 4 == i and self.instrument_id == j:
+                    self.beats[i][j] = SequencerTile.rest if rest else self.beat_note 
         
-    def toggle_neighbors(self, grid, sequencer_size):
+    def toggle_neighbors(self, objects, sequencer_size):
         x,y = self.relative_pos
         x_left = None if x == 0 else x - 1
         x_right = None if x == sequencer_size - 1 else x + 1
@@ -200,10 +230,6 @@ class SequencerTile(Tile):
         coords = [(x_left, y), (x_right, y), (x, y_up), (x, y_down)]
         coords = [(self.topleft[0] + coord[0], self.topleft[1] - coord[1]) for coord in coords if None not in coord]
         for coord in coords:
-            tile = grid.get_tile(coord)
-            if isinstance(tile, SequencerTile):
-                tile.toggle()
+            if coord in objects:
+                objects[coord].toggle()
 
-
-# if __name__ == "__main__":
-#     run(MainWidget)

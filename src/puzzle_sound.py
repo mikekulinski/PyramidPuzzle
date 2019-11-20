@@ -1,4 +1,3 @@
-
 import sys
 sys.path.append('..')
 from common.core import BaseWidget, run, lookup
@@ -45,7 +44,7 @@ class MainWidget(BaseWidget) :
     def on_update(self) :
         self.audio.on_update()
         self.label.text = self.sched.now_str() + '\n'
-        
+
 
 class PuzzleSound(object):
     def __init__(self, notes, sched, synth, bank=0, preset=0, loop=False):
@@ -60,24 +59,24 @@ class PuzzleSound(object):
         self.update_sounds(notes)
 
         self.soundplaying = False
-        
+
     def update_sounds(self, notes):
         self.letters = []
         self.dur_midi= []
         self.notes = notes
         for note in notes:
-            #self.letters.append(note.get_letter())
             if type(note) is not list:
                 self.dur_midi.append((note.get_dur(), note.get_pitch()))
             else:
                 self.dur_midi.append([(n.get_dur(), n.get_pitch()) for n in note])
+        print(self.dur_midi)
         if self.noteseq:
             self.noteseq.stop()
-        self.noteseq = NoteSequencer(self.sched, self.synth, 1, (self.bank,self.preset), self.dur_midi, self.loop)
+        self.noteseq = NoteSequencer(self.sched, self.synth, 1, (self.bank,self.preset), self.dur_midi, loop=self.loop)
 
     def toggle(self):
         self.noteseq.toggle()
-        
+
 
 
 class Note(object):
@@ -193,8 +192,9 @@ class NoteSequencer(object):
 
         # play new note if available
         if self.idx < len(self.notes):
-            notes_list = self.notes[self.idx]
-            if type(notes_list) is not list:
+            if type(self.notes[self.idx]) is list:
+                notes_list = self.notes[self.idx].copy()
+            else:
                 notes_list = [self.notes[self.idx]]
             while notes_list:
                 length, pitch = notes_list.pop(0)
@@ -215,10 +215,5 @@ class NoteSequencer(object):
 
 
 
-
-
-
 if __name__ == "__main__":
     run(MainWidget)
-
-
