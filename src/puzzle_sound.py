@@ -48,12 +48,14 @@ class MainWidget(BaseWidget) :
         
 
 class PuzzleSound(object):
-    def __init__(self, notes, sched, synth, bank=0, preset=0):
+    def __init__(self, notes, sched, synth, bank=0, preset=0, loop=False):
         super().__init__()
         self.sched = sched
         self.synth = synth
         self.bank = bank
         self.preset = preset
+        self.loop = loop
+        self.noteseq = None
 
         self.update_sounds(notes)
 
@@ -69,7 +71,9 @@ class PuzzleSound(object):
                 self.dur_midi.append((note.get_dur(), note.get_pitch()))
             else:
                 self.dur_midi.append([(n.get_dur(), n.get_pitch()) for n in note])
-        self.noteseq = NoteSequencer(self.sched, self.synth, 1, (self.bank,self.preset), self.dur_midi)
+        if self.noteseq:
+            self.noteseq.stop()
+        self.noteseq = NoteSequencer(self.sched, self.synth, 1, (self.bank,self.preset), self.dur_midi, self.loop)
 
     def toggle(self):
         self.noteseq.toggle()
@@ -193,7 +197,6 @@ class NoteSequencer(object):
             if type(notes_list) is not list:
                 notes_list = [self.notes[self.idx]]
             while notes_list:
-                print(notes_list)
                 length, pitch = notes_list.pop(0)
                 if pitch != 0: # pitch 0 is a rest
                     self.synth.noteon(self.channel, pitch, self.vel)  # play note

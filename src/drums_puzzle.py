@@ -54,23 +54,10 @@ pattern = [
 
 #hi-hat, snare, bass drum, tambourine
 instruments = [42, 38, 36, 54]
-all_rests = [Note(480, 0) for _ in range(8)]
+all_rests = [Note(480, 42) for _ in range(8)]
 
 #character knows which tile its on
 #receive tile, toggle that tile and the surrounding ones
-class MainWidget(BaseWidget):
-    def __init__(self):
-        super().__init__()
-        self.music_puzzle = DrumsPuzzle()
-        self.canvas.add(self.music_puzzle)
-
-    def on_update(self):
-        self.music_puzzle.on_update()
-
-    def on_key_down(self, keycode, modifiers):
-        if keycode[1] == "p":
-            self.music_puzzle.on_p()
-
 
 class DrumsPuzzle(InstructionGroup):
     def __init__(self):
@@ -95,9 +82,8 @@ class DrumsPuzzle(InstructionGroup):
             for beat_id in range(4):
                 sequencer_tiles.append((
                     (x_topleft + beat_id, y_topleft - instrument_id),
-                    lambda size, pos: SequencerTile(size, pos, beat_id, instrument_id, (x_topleft, y_topleft), self.beats),
+                    lambda size, pos, beat_id=beat_id, instrument_id=instrument_id: SequencerTile(size, pos, beat_id, instrument_id, (x_topleft, y_topleft), self.beats),
                 ))
-
         self.grid = Grid(
             num_tiles=9,
             objects=sequencer_tiles,
@@ -118,11 +104,14 @@ class DrumsPuzzle(InstructionGroup):
             self.character.move_player(new_location)
         elif button == Button.A:
             if isinstance(self.character.current_tile, SequencerTile):
-                self.character.current_tile.on_button_press()
+                self.on_button_press()
+        elif button == Button.B:
+            self.on_p()
 
     def on_button_press(self):
         self.character.current_tile.on_button_press()
-        self.character.current_tile.toggle_neighbors(grid, 4)
+        self.character.current_tile.toggle_neighbors(self.grid, 4)
+        self.sound.update_sounds(self.beats)
 
     def on_layout(self, win_size):
         self.remove(self.character)
@@ -145,8 +134,8 @@ class DrumPatternGraphics(InstructionGroup):
         self.render_elements()
 
     def render_elements(self):
-        size = self.win_size[0] / 5
-        self.grid = CRectangle(cpos=(self.win_size[0] // 5, self.win_size[1] // 5),
+        size = self.win_size[0] / 6
+        self.grid = CRectangle(cpos=(self.win_size[0] // 10, self.win_size[1] // 6),
             csize=(size, size),
         )
         self.squares = []
@@ -174,16 +163,17 @@ class SequencerTile(Tile):
     inactive_color = Color(rgba=(0, 0.4, 0, 1))
     rest = Note(480, 0)
 
-    def __init__(self, size, pos, beat_id, instrument_id, topleft, beats):
+    def __init__(self, size, pos, beat_idx, instrument_idx, topleft, beats):
         super().__init__(size, pos)
         
-        self.beat_id = beat_id
-        self.instrument_pitch = instruments[instrument_id]
+        self.beat_id = beat_idx
+        self.instrument_id = instrument_idx
+        self.instrument_pitch = instruments[instrument_idx]
         self.beats = beats
         self.beat_on = False
         self.beat_note = Note(480, self.instrument_pitch)
-        self.abs_pos = (topleft[0] + beat_id, topleft[1] - instrument_id)
-        self.relative_pos = (beat_id, instrument_id)
+        self.topleft = topleft
+        self.relative_pos = (beat_idx, instrument_idx)
         self.set_color(color=SequencerTile.inactive_color)
 
     def on_button_press(self):
@@ -194,24 +184,26 @@ class SequencerTile(Tile):
     def toggle(self):
         #flip tile, toggle audio
         if self.beat_on:
-            self.beats[self.beat_id::4] = [rest for _ in range(self.beats[self.beat_id::4])]
+            self.beats[self.beat_id::4] = [SequencerTile.rest for _ in range(len(self.beats[self.beat_id::4]))]
             self.set_color(color=SequencerTile.inactive_color)
         else:
-            self.beats[self.beat_id::4] = [self.beat_note for _ in range(self.beats[self.beat_id::4])]
+            self.beats[self.beat_id::4] = [self.beat_note for _ in range(len(self.beats[self.beat_id::4]))]
             self.set_color(SequencerTile.active_color)
         self.beat_on = not self.beat_on
         
     def toggle_neighbors(self, grid, sequencer_size):
-        #look left
         x,y = self.relative_pos
-        x_left = sequencer_size - 1 if x == 0 else x - 1
-        x_right = 0 if x == sequencer_size - 1 else x + 1
-        y_down = 0 if y == sequencer_size - 1 else y + 1
-        y_up = sequencer_size - 1 if y == 0 else y - 1
-        coords = [(x_left, y_up), (x_left, y_down), (x_right, y_up), (x_right, y_down)]
+        x_left = None if x == 0 else x - 1
+        x_right = None if x == sequencer_size - 1 else x + 1
+        y_down = None if y == sequencer_size - 1 else y + 1
+        y_up = None if y == 0 else y - 1
+        coords = [(x_left, y), (x_right, y), (x, y_up), (x, y_down)]
+        coords = [(self.topleft[0] + coord[0], self.topleft[1] - coord[1]) for coord in coords if None not in coord]
         for coord in coords:
-            grid.get_tile(coord).toggle()
+            tile = grid.get_tile(coord)
+            if isinstance(tile, SequencerTile):
+                tile.toggle()
 
 
-if __name__ == "__main__":
-    run(MainWidget)
+# if __name__ == "__main__":
+#     run(MainWidget)
