@@ -101,12 +101,12 @@ class Grid(InstructionGroup):
 
         self.add(PopMatrix())
 
-    def get_tile(self, loc):
-        x, y = loc
+    def get_tile(self, pos):
+        x, y = pos
         return self.tiles[y][x]
 
-    def grid_to_pixel(self, loc):
-        x, y = loc
+    def grid_to_pixel(self, pos):
+        x, y = pos
         return (x * self.tile_side_len, y * self.tile_side_len)
 
     def on_layout(self, win_size):
