@@ -5,7 +5,7 @@ from kivy.graphics.instructions import InstructionGroup
 from common.button import Button
 from common.gfxutil import CLabelRect, CRectangle
 from src.character import Character
-from src.grid import Grid, Tile
+from src.grid import Tile, Grid, DoorTile
 from src.puzzle_sound import Note, PuzzleSound
 
 
@@ -64,13 +64,15 @@ class Mummy(Tile):
 
 
 class BassPuzzle(InstructionGroup):
-    def __init__(self):
+    def __init__(self, center_room):
         super().__init__()
+        self.center_room = center_room
+
         self.puzzle_on = False
         self.note_index = 1
         self.cpu_turn = True
         self.user_sequence = []
-        self.correct_sequence = [0, 1, 3, 2, 3]
+        self.correct_sequence = [0, 1, 2, 3]
 
         self.colors = [
             Color(rgb=(0, 1, 0)),  # Green
@@ -133,8 +135,14 @@ class BassPuzzle(InstructionGroup):
 
     def place_objects(self):
         self.objects = {}
-        self.mummy = self.create_mummy((4, 8))
-        self.objects[(4, 8)] = self.mummy
+        # Add door to switch between rooms
+        size = (self.grid.tile_side_len, self.grid.tile_side_len)
+        self.objects[(4, 8)] = DoorTile(
+            size, self.grid.grid_to_pixel((4, 0)), self.center_room
+        )
+
+        self.mummy = self.create_mummy((4, 7))
+        self.objects[(4, 7)] = self.mummy
 
         if self.puzzle_on:
             self.simons = []
@@ -218,6 +226,9 @@ class BassPuzzle(InstructionGroup):
             new_location = (cur_location[0] + x, cur_location[1] + y)
             self.character.change_direction(button.value)
             self.character.move_player(new_location)
+            if self.character.grid_pos in self.objects:
+                if isinstance(self.objects[self.character.grid_pos], DoorTile):
+                    return self.objects[self.character.grid_pos].other_room
         elif button == Button.A:
             self.character.interact()
 

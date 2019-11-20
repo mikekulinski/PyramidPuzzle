@@ -210,9 +210,9 @@ class MusicPuzzle(InstructionGroup):
                     self.on_R()
 
             if button == Button.MINUS:
-                self.puzzle.play(actual=True)
+                self.play(actual=True)
             elif button == Button.PLUS:
-                self.puzzle.play(actual=False)
+                self.play(actual=False)
             elif button == Button.B:
                 # Exit puzzle play and go back to movement
                 if self.character.grid_pos in self.objects:

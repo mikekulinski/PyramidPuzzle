@@ -24,7 +24,7 @@ class Character(InstructionGroup):
 
     def move_player(self, new_pos):
         self.remove(self.sprite)
-        if self.puzzle.is_valid_pos(new_pos) and new_pos not in self.puzzle.objects:
+        if self.puzzle.is_valid_pos(new_pos):
             self.grid_pos = new_pos
             self.current_tile = self.puzzle.get_tile(self.grid_pos)
             tile_size = np.array(self.current_tile.size)

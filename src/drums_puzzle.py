@@ -40,24 +40,20 @@ from common.clock import (
 from random import randint, random, choice
 import numpy as np
 
-#make audio loop so notes change in real time
-#map a 4 x 4 grid x axis is beat and y axis is instrument (hi-hat, bass drum, etc.)
-#no concept of actual sound
+# make audio loop so notes change in real time
+# map a 4 x 4 grid x axis is beat and y axis is instrument (hi-hat, bass drum, etc.)
+# no concept of actual sound
 
-pattern = [
-            "X  X",
-            " XX ",
-            "XX  ",
-            "  X "
-            ]
+pattern = ["X  X", " XX ", "XX  ", "  X "]
 
 
-#hi-hat, snare, bass drum, tambourine
+# hi-hat, snare, bass drum, tambourine
 instruments = [42, 38, 36, 54]
 all_rests = [[Note(480, 0) for i in instruments] for _ in range(8)]
 
-#character knows which tile its on
-#receive tile, toggle that tile and the surrounding ones
+# character knows which tile its on
+# receive tile, toggle that tile and the surrounding ones
+
 
 class DrumsPuzzle(InstructionGroup):
     def __init__(self, center_room):
@@ -65,7 +61,7 @@ class DrumsPuzzle(InstructionGroup):
         self.center_room = center_room
         self.drum_graphics = DrumPatternGraphics(pattern)
         self.add(self.drum_graphics)
-    
+
         self.beats = all_rests
         self.sound = PuzzleSound(self.beats, bank=128, loop=True)
 
@@ -103,16 +99,27 @@ class DrumsPuzzle(InstructionGroup):
     def place_objects(self):
         self.objects = {}
         size = (self.grid.tile_side_len, self.grid.tile_side_len)
-        self.objects[(4, 0)] = DoorTile(size, self.grid.grid_to_pixel((4, 0)), self.center_room)
-        x_topleft, y_topleft = (2,5)
+        self.objects[(4, 0)] = DoorTile(
+            size, self.grid.grid_to_pixel((4, 0)), self.center_room
+        )
+        x_topleft, y_topleft = (2, 5)
 
         self.sequencer_tiles = []
         for instrument_id in range(len(instruments)):
             row = []
             for beat_id in range(4):
                 size = (self.grid.tile_side_len, self.grid.tile_side_len)
-                pos = self.grid.grid_to_pixel((x_topleft + beat_id, y_topleft - instrument_id))
-                tile = SequencerTile(size, pos, beat_id, instrument_id, (x_topleft, y_topleft), self.beats)
+                pos = self.grid.grid_to_pixel(
+                    (x_topleft + beat_id, y_topleft - instrument_id)
+                )
+                tile = SequencerTile(
+                    size,
+                    pos,
+                    beat_id,
+                    instrument_id,
+                    (x_topleft, y_topleft),
+                    self.beats,
+                )
                 self.objects[(x_topleft + beat_id, y_topleft - instrument_id)] = tile
                 row.append(tile)
             self.sequencer_tiles.append(row)
@@ -133,7 +140,6 @@ class DrumsPuzzle(InstructionGroup):
                 self.add(self.game_over_window)
                 self.add(self.game_over_text_color)
                 self.add(self.game_over_text)
-
 
     def on_player_input(self, button):
         if button in [Button.UP, Button.DOWN, Button.LEFT, Button.RIGHT]:
@@ -173,7 +179,7 @@ class DrumsPuzzle(InstructionGroup):
         self.grid.on_layout(win_size)
         for pos, obj in self.objects.items():
             self.remove(obj)
-        
+
         self.add(self.grid)
         self.drum_graphics.on_layout(win_size)
         self.place_objects()
@@ -188,7 +194,7 @@ class DrumsPuzzle(InstructionGroup):
         self.game_over_text = CLabelRect(
             (win_size[0] // 2, win_size[1] // 2), "You Win!", 70
         )
-        
+
 
 class DrumPatternGraphics(InstructionGroup):
     def __init__(self, pattern):
@@ -199,20 +205,27 @@ class DrumPatternGraphics(InstructionGroup):
 
     def render_elements(self):
         size = self.win_size[0] / 6
-        self.grid = CRectangle(cpos=(self.win_size[0] // 10, self.win_size[1] // 6),
-            csize=(size, size),
+        self.grid = CRectangle(
+            cpos=(self.win_size[0] // 10, self.win_size[1] // 6), csize=(size, size)
         )
         self.squares = []
         square_size = size / 4
-        top_left = (self.grid.cpos[0] - size/2 + square_size/2, self.grid.cpos[1] + size/2 - square_size/2)
+        top_left = (
+            self.grid.cpos[0] - size / 2 + square_size / 2,
+            self.grid.cpos[1] + size / 2 - square_size / 2,
+        )
         self.add(self.grid)
         for i in range(len(pattern)):
             for j in range(len(pattern[i])):
                 if pattern[i][j] == "X":
-                    sq = CRectangle(cpos=(top_left[0] + j * square_size, top_left[1] - i * square_size),
-                                        csize=(square_size, square_size),
-                                    )
-                    self.add(Color(rgb=(0,1,0)))
+                    sq = CRectangle(
+                        cpos=(
+                            top_left[0] + j * square_size,
+                            top_left[1] - i * square_size,
+                        ),
+                        csize=(square_size, square_size),
+                    )
+                    self.add(Color(rgb=(0, 1, 0)))
                     self.add(sq)
                     self.squares.append(sq)
 
@@ -229,7 +242,7 @@ class SequencerTile(Tile):
 
     def __init__(self, size, pos, beat_idx, instrument_idx, topleft, beats):
         super().__init__(size, pos)
-        
+
         self.beat_id = beat_idx
         self.instrument_id = instrument_idx
         self.instrument_pitch = instruments[instrument_idx]
@@ -241,12 +254,12 @@ class SequencerTile(Tile):
         self.set_color(color=SequencerTile.inactive_color)
 
     def on_button_press(self):
-        #toggle audio mapped to it
-        #toggle tile appearance
+        # toggle audio mapped to it
+        # toggle tile appearance
         self.toggle()
 
     def toggle(self):
-        #flip tile, toggle audio
+        # flip tile, toggle audio
         if self.beat_on:
             self.set_beats(rest=True)
             self.set_color(color=SequencerTile.inactive_color)
@@ -259,16 +272,20 @@ class SequencerTile(Tile):
         for i in range(len(self.beats)):
             for j in range(len(self.beats)):
                 if self.beat_id % 4 == i and self.instrument_id == j:
-                    self.beats[i][j] = SequencerTile.rest if rest else self.beat_note 
-        
+                    self.beats[i][j] = SequencerTile.rest if rest else self.beat_note
+
     def toggle_neighbors(self, objects, sequencer_size):
-        x,y = self.relative_pos
+        x, y = self.relative_pos
         x_left = None if x == 0 else x - 1
         x_right = None if x == sequencer_size - 1 else x + 1
         y_down = None if y == sequencer_size - 1 else y + 1
         y_up = None if y == 0 else y - 1
         coords = [(x_left, y), (x_right, y), (x, y_up), (x, y_down)]
-        coords = [(self.topleft[0] + coord[0], self.topleft[1] - coord[1]) for coord in coords if None not in coord]
+        coords = [
+            (self.topleft[0] + coord[0], self.topleft[1] - coord[1])
+            for coord in coords
+            if None not in coord
+        ]
         for coord in coords:
             if coord in objects:
                 objects[coord].toggle()

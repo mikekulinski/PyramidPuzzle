@@ -43,6 +43,7 @@ from common.clock import (
 from random import randint, random, choice
 import numpy as np
 
+
 class CenterRoom(InstructionGroup):
     def __init__(self):
         super().__init__()
@@ -52,7 +53,6 @@ class CenterRoom(InstructionGroup):
 
         self.character = Character(self)
         self.add(self.character)
-
 
     def is_valid_pos(self, pos):
         if pos[0] < 0 or pos[0] >= self.grid.num_tiles:
@@ -71,10 +71,18 @@ class CenterRoom(InstructionGroup):
 
         size = (self.grid.tile_side_len, self.grid.tile_side_len)
 
-        self.objects[(0, 4)] = DoorTile(size, self.grid.grid_to_pixel((0,4)), MusicPuzzle(self))
-        self.objects[(4, 0)] = DoorTile(size, self.grid.grid_to_pixel((4, 0)), BassPuzzle())
-        self.objects[(8, 4)] = DoorTile(size, self.grid.grid_to_pixel((8, 4)), DrumsPuzzle(self))
-        self.objects[(4, 8)] = DoorTile(size, self.grid.grid_to_pixel((4, 8)), DrumsPuzzle(self))
+        self.objects[(0, 4)] = DoorTile(
+            size, self.grid.grid_to_pixel((0, 4)), MusicPuzzle(self)
+        )
+        self.objects[(4, 0)] = DoorTile(
+            size, self.grid.grid_to_pixel((4, 0)), BassPuzzle(self)
+        )
+        self.objects[(8, 4)] = DoorTile(
+            size, self.grid.grid_to_pixel((8, 4)), DrumsPuzzle(self)
+        )
+        self.objects[(4, 8)] = DoorTile(
+            size, self.grid.grid_to_pixel((4, 8)), DrumsPuzzle(self)
+        )
 
         self.add(PushMatrix())
         self.add(Translate(*self.grid.pos))
@@ -104,11 +112,9 @@ class CenterRoom(InstructionGroup):
         self.grid.on_layout(win_size)
         for pos, obj in self.objects.items():
             self.remove(obj)
-        
+
         self.add(self.grid)
         self.place_objects()
         self.character.on_layout(win_size)
         self.add(self.character)
-
-
 
