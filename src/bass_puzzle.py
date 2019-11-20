@@ -14,6 +14,43 @@ from src.puzzle_sound import Note, PuzzleSound
 from src.character import Character
 
 
+class SimonSays(InstructionGroup):
+    def __init__(self, size, pos, color, idx, on_interact):
+        super().__init__()
+        self.size = size
+        self.pos = pos
+
+        self.unactive_color = Color(rgba=(*color.rgb, 1 / 3))
+        self.active_color = Color(rgba=(*color.rgb, 1))
+        self.active = False
+        self.idx = idx
+        self.on_interact = on_interact
+
+        self.current_color = Color(rgba=self.unactive_color.rgba)
+        self.rect = CRectangle(csize=self.size, cpos=self.pos)
+        self.add(self.current_color)
+        self.add(self.rect)
+
+        self.deactivate()
+
+    def set_color(self, color):
+        self.remove(self.rect)
+
+        self.current_color = Color(rgba=color.rgba)
+        self.rect = CRectangle(csize=self.size, cpos=self.pos)
+        self.add(self.current_color)
+        self.add(self.rect)
+
+    def interact(self):
+        self.on_interact(self.idx)
+
+    def activate(self):
+        self.set_color(color=self.active_color)
+
+    def deactivate(self):
+        self.set_color(color=self.unactive_color)
+
+
 class Mummy(Tile):
     def __init__(self, size, pos, on_interact, icon_source):
         super().__init__(size, pos)
@@ -30,6 +67,13 @@ class BassPuzzle(InstructionGroup):
     def __init__(self):
         super().__init__()
         self.puzzle_on = False
+        self.colors = [
+            Color(rgb=(0, 1, 0)),  # Green
+            Color(rgb=(1, 0, 0)),  # Red
+            Color(rgb=(1, 1, 0)),  # Yellow
+            Color(rgb=(0, 0, 1)),  # Blue
+            Color(rgb=(1, 165 / 255, 0)),  # Orange
+        ]
 
         self.grid = Grid(num_tiles=9)
         self.add(self.grid)
@@ -57,21 +101,28 @@ class BassPuzzle(InstructionGroup):
         pos = self.grid.grid_to_pixel(pos)
         return Mummy(size, pos, self.on_interact_mummy, "./data/mummy.jpg")
 
+    def create_simon_says(self, pos, idx):
+        size = (self.grid.tile_side_len * 0.75, self.grid.tile_side_len * 0.75)
+        pos = self.grid.grid_to_pixel(pos)
+        pos = (
+            pos[0] + self.grid.tile_side_len // 2,
+            pos[1] + self.grid.tile_side_len // 2,
+        )
+        color = self.colors[idx]
+        return SimonSays(size, pos, color, idx, self.on_interact_simon_says)
+
     def place_objects(self):
         self.objects = {}
         self.mummy = self.create_mummy((4, 8))
         self.objects[(4, 8)] = self.mummy
 
         if self.puzzle_on:
-            self.m1 = self.create_mummy((1, 4))
-            self.m2 = self.create_mummy((3, 4))
-            self.m3 = self.create_mummy((5, 4))
-            self.m4 = self.create_mummy((7, 4))
-
-            self.objects[(1, 4)] = self.m1
-            self.objects[(3, 4)] = self.m2
-            self.objects[(5, 4)] = self.m3
-            self.objects[(7, 4)] = self.m4
+            self.simons = []
+            for idx in range(4):
+                pos = (2 * idx + 1, 4)
+                simon = self.create_simon_says(pos, idx)
+                self.simons.append(simon)
+                self.objects[pos] = simon
 
         self.add(PushMatrix())
         self.add(Translate(*self.grid.pos))
@@ -82,11 +133,15 @@ class BassPuzzle(InstructionGroup):
         self.add(PopMatrix())
 
     def on_interact_mummy(self):
-        self.puzzle_on = True
         print("Interacted with mummy!")
+        self.puzzle_on = True
         for pos, obj in self.objects.items():
             self.remove(obj)
         self.place_objects()
+
+    def on_interact_simon_says(self, idx):
+        print("Playing simon says")
+        self.simons[idx].activate()
 
     def on_update(self):
         pass

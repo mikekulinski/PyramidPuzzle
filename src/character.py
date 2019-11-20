@@ -55,10 +55,12 @@ class Character(InstructionGroup):
             self.grid_pos[0] + self.direction[0],
             self.grid_pos[1] + self.direction[1],
         )
+        # TODO REMOVE THE TRY, IT CAUSES PROBLEMS
         try:
             obj = self.puzzle.objects[in_front]
             obj.interact()
-        except Exception:
+        except Exception as e:
+            print(type(e), e)
             print("Tile not interactable")
 
     def on_layout(self, win_size):
