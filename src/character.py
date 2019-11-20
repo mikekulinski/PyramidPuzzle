@@ -1,61 +1,65 @@
 # common imports
+import numpy as np
 from kivy.graphics import Color
 from kivy.graphics.instructions import InstructionGroup
 
 from common.gfxutil import CRectangle
-from src.grid import Switch
-
-FLOOR_SIZE = 9
+from common.button import Button
 
 
 class Character(InstructionGroup):
     def __init__(self, puzzle):
         super().__init__()
         self.puzzle = puzzle
-        self.grid_pos = (0, 0)
-        self.current_tile = self.puzzle.grid.get_tile(self.grid_pos)
+
+        self.direction = (0, 1)
+        self.source = "./data/up_arrow.png"
+        self.grid_pos = (
+            self.puzzle.grid.num_tiles // 2,
+            self.puzzle.grid.num_tiles // 2,
+        )
         self.sprite = CRectangle()
         self.add(self.sprite)
+        self.move_player(self.grid_pos)
 
-        self.move_player((FLOOR_SIZE // 2, FLOOR_SIZE // 2))
-
-    def get_valid_pos(self, grid_pos):
-        new_pos = list(grid_pos)
-        # Check if this is a valid move, if not move them back in bounds
-        if grid_pos[0] < 0:
-            new_pos[0] = 0
-        elif grid_pos[0] >= FLOOR_SIZE:
-            new_pos[0] = FLOOR_SIZE - 1
-
-        if grid_pos[1] < 0:
-            new_pos[1] = 0
-        elif grid_pos[1] >= FLOOR_SIZE:
-            new_pos[1] = FLOOR_SIZE - 1
-
-        return tuple(new_pos)
-
-    def move_player(self, grid_pos):
-        new_pos = self.get_valid_pos(grid_pos)
-
-        if isinstance(self.current_tile, Switch) and self.current_tile.is_active:
-            self.current_tile.deactivate()
-
+    def move_player(self, new_pos):
         self.remove(self.sprite)
+        if self.puzzle.is_valid_pos(new_pos) and new_pos not in self.puzzle.objects:
+            self.grid_pos = new_pos
+            self.current_tile = self.puzzle.get_tile(self.grid_pos)
+            tile_size = np.array(self.current_tile.size)
+            self.pixel_pos = (
+                self.current_tile.pos + (tile_size // 2) + self.puzzle.grid.pos
+            )
 
-        self.grid_pos = new_pos
-        self.current_tile = self.puzzle.grid.get_tile(self.grid_pos)
-        tile_size = self.current_tile.size
-        self.pixel_pos = self.current_tile.pos + (tile_size // 2) + self.puzzle.grid.pos
+            self.size = tile_size
 
-        self.size = tile_size // 3
-
-        self.color = Color(1, 0, 0)
-        self.add(self.color)
-        self.sprite = CRectangle(cpos=self.pixel_pos, csize=self.size)
+        self.sprite = CRectangle(
+            cpos=self.pixel_pos, csize=self.size, source=self.source
+        )
         self.add(self.sprite)
 
-        if isinstance(self.current_tile, Switch) and not self.current_tile.is_active:
-            self.current_tile.activate()
+    def change_direction(self, direction):
+        self.direction = direction
+        if self.direction == Button.UP.value:
+            self.source = "./data/up_arrow.png"
+        elif self.direction == Button.DOWN.value:
+            self.source = "./data/down_arrow.png"
+        elif self.direction == Button.LEFT.value:
+            self.source = "./data/left_arrow.png"
+        elif self.direction == Button.RIGHT.value:
+            self.source = "./data/right_arrow.png"
+
+    def interact(self):
+        in_front = (
+            self.grid_pos[0] + self.direction[0],
+            self.grid_pos[1] + self.direction[1],
+        )
+        try:
+            obj = self.puzzle.objects[in_front]
+            obj.interact()
+        except Exception:
+            print("Tile not interactable")
 
     def on_layout(self, win_size):
         self.move_player(self.grid_pos)

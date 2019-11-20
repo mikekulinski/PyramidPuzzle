@@ -11,8 +11,8 @@ class Tile(InstructionGroup):
 
     def __init__(self, size, pos):
         super().__init__()
-        self.size = np.array(size)
-        self.pos = np.array(pos)
+        self.size = size
+        self.pos = pos
 
         self.inside_color = Tile.base_color
         self.inside_rect = Rectangle(size=self.size, pos=self.pos)
@@ -104,25 +104,13 @@ class Grid(InstructionGroup):
 
         self.add(PopMatrix())
 
-    def place_object(self, loc, obj):
-        self.add(PushMatrix())
-        self.add(Translate(*self.pos))
+    def get_tile(self, pos):
+        x, y = pos
+        return self.tiles[y][x]
 
-        r, c = loc
-        old_tile = self.tiles[r][c]
-        self.remove(old_tile)
-        new_tile = obj(
-            size=(self.tile_side_len, self.tile_side_len),
-            pos=(c * self.tile_side_len, r * self.tile_side_len),
-        )
-        self.tiles[r][c] = new_tile
-        self.add(new_tile)
-
-        self.add(PopMatrix())
-
-    def get_tile(self, loc):
-        r, c = loc
-        return self.tiles[r][c]
+    def grid_to_pixel(self, pos):
+        x, y = pos
+        return (x * self.tile_side_len, y * self.tile_side_len)
 
     def on_layout(self, win_size):
         for row in self.tiles:
