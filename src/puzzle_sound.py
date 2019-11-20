@@ -81,14 +81,22 @@ class PuzzleSound(object):
 
         self.soundplaying = False
 
-    def update_sounds(self, notes):
+    def update_sounds(self, notes, callback_ons=[], callback_offs=[]):
         self.letters = []
         self.dur_midi = []
         self.notes = notes
         for note in notes:
             self.letters.append(note.get_letter())
             self.dur_midi.append((note.get_dur(), note.get_pitch()))
-        self.noteseq = NoteSequencer(self.sched, self.synth, 1, (0, 0), self.dur_midi)
+        self.noteseq = NoteSequencer(
+            self.sched,
+            self.synth,
+            1,
+            (0, 0),
+            self.dur_midi,
+            callback_ons=callback_ons,
+            callback_offs=callback_offs,
+        )
 
     def toggle(self):
         self.noteseq.toggle()
@@ -172,7 +180,18 @@ class NoteSequencer(object):
     """Plays a single Sequence of notes. The sequence is a python list containing
     notes. Each note is (dur, pitch)."""
 
-    def __init__(self, sched, synth, channel, program, notes, vel=60, loop=False):
+    def __init__(
+        self,
+        sched,
+        synth,
+        channel,
+        program,
+        notes,
+        callback_ons=[],
+        callback_offs=[],
+        vel=60,
+        loop=False,
+    ):
         super(NoteSequencer, self).__init__()
         self.sched = sched
         self.synth = synth
@@ -182,6 +201,8 @@ class NoteSequencer(object):
         self.notes = notes
         self.loop = loop
         self.playing = False
+        self.callback_ons = callback_ons
+        self.callback_offs = callback_offs
 
         self.cmd = None
         self.idx = 0
@@ -202,6 +223,19 @@ class NoteSequencer(object):
         next_beat = quantize_tick_up(now, kTicksPerQuarter)
         self.cmd = self.sched.post_at_tick(self._note_on, next_beat)
 
+    def start_simon_says(self):
+        if self.playing:
+            return
+
+        self.playing = True
+
+        # start from the beginning
+        self.idx = 0
+
+        # post the first note on the next quarter-note:
+        now = self.sched.get_tick()
+        self.cmd = self.sched.post_at_tick(self.simon_says_on, now)
+
     def stop(self):
         if not self.playing:
             return
@@ -216,7 +250,7 @@ class NoteSequencer(object):
         else:
             self.start()
 
-    def _note_on(self, tick, ignore, ignore2):
+    def _note_on(self, tick, ignore):
         # if looping, go back to beginning
         if self.loop and self.idx >= len(self.notes):
             self.idx = 0
@@ -236,22 +270,34 @@ class NoteSequencer(object):
         else:
             self.playing = False
 
-    def _note_off(self, tick, pitch, ignore):
+    def _note_off(self, tick, pitch):
         # terminate current note:
         self.synth.noteoff(self.channel, pitch)
 
-    def simon_says_on(self, pitch, callback):
-        self.synth.noteon(self.channel, pitch, self.vel)
-        now = self.sched.get_tick()
-        self.cmd = self.sched.post_at_tick(
-            self.simon_says_off, now + 480, pitch, callback
-        )
-        self.playing = True
+    def simon_says_on(self, tick, ignore):
+        if self.idx < len(self.notes):
+            length, pitch = self.notes[self.idx]
+            cb_on = self.callback_ons[self.idx]
 
-    def simon_says_off(self, tick, pitch, callback):
+            # Play note and activate simon says tile
+            self.synth.noteon(self.channel, pitch, self.vel)
+            cb_on()
+
+            # Schedule note and tile to turn off
+            now = self.sched.get_tick()
+            self.cmd = self.sched.post_at_tick(self.simon_says_off, now + length, pitch)
+            self.playing = True
+        else:
+            self.playing = False
+
+    def simon_says_off(self, tick, pitch):
         self.synth.noteoff(self.channel, pitch)
-        self.playing = False
-        callback()
+        cb_off = self.callback_offs[self.idx]
+        cb_off()
+        self.idx += 1
+
+        now = self.sched.get_tick()
+        self.cmd = self.sched.post_at_tick(self.simon_says_on, now)
 
 
 if __name__ == "__main__":
