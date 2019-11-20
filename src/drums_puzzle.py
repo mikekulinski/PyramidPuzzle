@@ -62,19 +62,11 @@ all_rests = [[Note(480, 0) for i in instruments] for _ in range(8)]
 class DrumsPuzzle(InstructionGroup):
     def __init__(self):
         super().__init__()
-        self.audio = Audio(2)
         self.drum_graphics = DrumPatternGraphics(pattern)
         self.add(self.drum_graphics)
-        self.synth = Synth("./data/FluidR3_GM.sf2")
-
-        self.tempo_map = SimpleTempoMap(120)
-        self.sched = AudioScheduler(self.tempo_map)
-
-        self.sched.set_generator(self.synth)
-        self.audio.set_generator(self.sched)
     
         self.beats = all_rests
-        self.sound = PuzzleSound(self.beats, self.sched, self.synth, bank=128, loop=True)
+        self.sound = PuzzleSound(self.beats, bank=128, loop=True)
 
         self.grid = Grid(num_tiles=9)
         self.add(self.grid)
@@ -82,6 +74,18 @@ class DrumsPuzzle(InstructionGroup):
 
         self.character = Character(self)
         self.add(self.character)
+
+        self.sequencer_tiles = []
+
+        self.game_over_window_color = Color(rgba=(1, 1, 1, 1))
+        self.game_over_window = CRectangle(
+            cpos=(Window.width // 2, Window.height // 2),
+            csize=(Window.width // 2, Window.height // 5),
+        )
+        self.game_over_text_color = Color(rgba=(0, 0, 0, 1))
+        self.game_over_text = CLabelRect(
+            (Window.width // 2, Window.height // 2), "You Win!", 70
+        )
 
     def is_valid_pos(self, pos):
         if pos[0] < 0 or pos[0] >= self.grid.num_tiles:
@@ -99,11 +103,16 @@ class DrumsPuzzle(InstructionGroup):
         self.objects = {}
         x_topleft, y_topleft = (2,5)
 
+        self.sequencer_tiles = []
         for instrument_id in range(len(instruments)):
+            row = []
             for beat_id in range(4):
                 size = (self.grid.tile_side_len, self.grid.tile_side_len)
                 pos = self.grid.grid_to_pixel((x_topleft + beat_id, y_topleft - instrument_id))
-                self.objects[(x_topleft + beat_id, y_topleft - instrument_id)] = SequencerTile(size, pos, beat_id, instrument_id, (x_topleft, y_topleft), self.beats)
+                tile = SequencerTile(size, pos, beat_id, instrument_id, (x_topleft, y_topleft), self.beats)
+                self.objects[(x_topleft + beat_id, y_topleft - instrument_id)] = tile
+                row.append(tile)
+            self.sequencer_tiles.append(row)
 
         self.add(PushMatrix())
         self.add(Translate(*self.grid.pos))
@@ -114,7 +123,14 @@ class DrumsPuzzle(InstructionGroup):
         self.add(PopMatrix())
 
     def on_update(self):
-        self.audio.on_update()
+        self.sound.on_update()
+        if self.sequencer_tiles:
+            if self.is_game_over():
+                self.add(self.game_over_window_color)
+                self.add(self.game_over_window)
+                self.add(self.game_over_text_color)
+                self.add(self.game_over_text)
+
 
     def on_player_input(self, button):
         if button in [Button.UP, Button.DOWN, Button.LEFT, Button.RIGHT]:
@@ -136,6 +152,15 @@ class DrumsPuzzle(InstructionGroup):
         self.sound.update_sounds(self.beats)
         self.sound.toggle()
 
+    def is_game_over(self):
+        for i in range(len(pattern)):
+            for j in range(len(pattern[i])):
+                if pattern[i][j] == "X" and not self.sequencer_tiles[i][j].beat_on:
+                    return False
+                if pattern[i][j] == " " and self.sequencer_tiles[i][j].beat_on:
+                    return False
+        return True
+
     def on_layout(self, win_size):
         self.remove(self.character)
         self.remove(self.grid)
@@ -148,6 +173,15 @@ class DrumsPuzzle(InstructionGroup):
         self.place_objects()
         self.character.on_layout(win_size)
         self.add(self.character)
+        self.game_over_window_color = Color(rgba=(1, 1, 1, 1))
+        self.game_over_window = CRectangle(
+            cpos=(win_size[0] // 2, win_size[1] // 2),
+            csize=(win_size[0] // 2, win_size[1] // 5),
+        )
+        self.game_over_text_color = Color(rgba=(0, 0, 0, 1))
+        self.game_over_text = CLabelRect(
+            (win_size[0] // 2, win_size[1] // 2), "You Win!", 70
+        )
         
 
 class DrumPatternGraphics(InstructionGroup):
