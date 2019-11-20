@@ -72,7 +72,7 @@ class BassPuzzle(InstructionGroup):
         self.note_index = 1
         self.cpu_turn = True
         self.user_sequence = []
-        self.correct_sequence = [0, 1, 2, 3]
+        self.correct_sequence = [0, 1, 3, 2, 3]
 
         self.colors = [
             Color(rgb=(0, 1, 0)),  # Green
@@ -138,7 +138,7 @@ class BassPuzzle(InstructionGroup):
         # Add door to switch between rooms
         size = (self.grid.tile_side_len, self.grid.tile_side_len)
         self.objects[(4, 8)] = DoorTile(
-            size, self.grid.grid_to_pixel((4, 0)), self.center_room
+            size, self.grid.grid_to_pixel((4, 8)), self.center_room
         )
 
         self.mummy = self.create_mummy((4, 7))
@@ -173,7 +173,7 @@ class BassPuzzle(InstructionGroup):
                 notes.append(self.notes[i])
                 cb_ons.append(self.simons[i].activate)
                 cb_offs.append(self.simons[i].deactivate)
-
+            print(notes, cb_ons, cb_offs)
             self.audio.update_sounds(notes, cb_ons, cb_offs)
             self.audio.noteseq.start_simon_says()
             self.cpu_turn = False

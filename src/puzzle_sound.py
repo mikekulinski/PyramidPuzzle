@@ -1,8 +1,16 @@
 import sys
-sys.path.append('..')
+
+sys.path.append("..")
 from common.core import BaseWidget, run, lookup
 from common.audio import Audio
-from common.clock import Clock, SimpleTempoMap, AudioScheduler, tick_str, kTicksPerQuarter, quantize_tick_up
+from common.clock import (
+    Clock,
+    SimpleTempoMap,
+    AudioScheduler,
+    tick_str,
+    kTicksPerQuarter,
+    quantize_tick_up,
+)
 from common.gfxutil import topleft_label
 from common.synth import Synth
 
@@ -15,42 +23,13 @@ from kivy.clock import Clock as kivyClock
 import numpy as np
 
 
-class MainWidget(BaseWidget) :
-    def __init__(self):
-        super(MainWidget, self).__init__()
-
-        self.audio = Audio(2)
-        self.synth = Synth('../data/FluidR3_GM.sf2')
-
-        self.tempo_map  = SimpleTempoMap(120)
-        self.sched = AudioScheduler(self.tempo_map)
-
-        self.sched.set_generator(self.synth)
-        self.audio.set_generator(self.sched)
-
-        song = [(480,60), (480,62), (480,64), (480,62), (480,64), (480,59), (960, 60)]
-        #self.notes = [Note(240, (60)+i*2*(-1)**(i)) for i in range(8)]
-        self.notes = [Note(*n) for n in song]
-        self.sound = PuzzleSound(self.notes, self.sched, self.synth)
-
-        self.label = topleft_label()
-        self.add_widget(self.label)
-
-    def on_key_down(self, keycode, modifiers):
-        if keycode[1] == 'p':
-            self.sound.toggle()
-    def on_update(self) :
-        self.audio.on_update()
-        self.label.text = self.sched.now_str() + '\n'
-
-
 class PuzzleSound(object):
     def __init__(self, notes, bank=0, preset=0, loop=False):
         super().__init__()
         self.audio = Audio(2)
-        self.synth = Synth('./data/FluidR3_GM.sf2')
+        self.synth = Synth("./data/FluidR3_GM.sf2")
 
-        self.tempo_map  = SimpleTempoMap(120)
+        self.tempo_map = SimpleTempoMap(120)
         self.sched = AudioScheduler(self.tempo_map)
 
         self.sched.set_generator(self.synth)
@@ -68,17 +47,20 @@ class PuzzleSound(object):
         self, notes, callback_ons=[], callback_offs=[], finished_playing=None
     ):
         self.letters = []
-        self.dur_midi= []
+        self.dur_midi = []
         self.notes = notes
         for note in notes:
+
             if type(note) is not list:
+                self.letters.append(note.get_letter())
                 self.dur_midi.append((note.get_dur(), note.get_pitch()))
             else:
+
                 self.dur_midi.append([(n.get_dur(), n.get_pitch()) for n in note])
-        if self.noteseq:
-            self.noteseq.stop()
-        else:
-            self.noteseq = NoteSequencer(
+        # if self.noteseq:
+        #     self.noteseq.stop()
+        # else:
+        self.noteseq = NoteSequencer(
             self.sched,
             self.synth,
             1,
@@ -89,8 +71,7 @@ class PuzzleSound(object):
             callback_offs=callback_offs,
             finished_playing=finished_playing,
         )
-        self.noteseq.notes = self.dur_midi
-        
+        # self.noteseq.notes = self.dur_midi
 
     def toggle(self):
         self.noteseq.toggle()
@@ -98,13 +79,27 @@ class PuzzleSound(object):
     def on_update(self):
         self.audio.on_update()
 
+
 class Note(object):
     def __init__(self, notedur, midipitch):
         super(Note, self).__init__()
 
-        self.allnotes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
-        ocatave = int(midipitch/12)-1
-        noteidx = midipitch%12
+        self.allnotes = [
+            "C",
+            "C#",
+            "D",
+            "D#",
+            "E",
+            "F",
+            "F#",
+            "G",
+            "G#",
+            "A",
+            "A#",
+            "B",
+        ]
+        ocatave = int(midipitch / 12) - 1
+        noteidx = midipitch % 12
 
         self.noteletter = self.allnotes[noteidx] + str(ocatave)
         self.midipitch = midipitch
@@ -114,8 +109,8 @@ class Note(object):
         self.flat = False
 
     def set_note(self, pitch):
-        ocatave = int(pitch/12)-1
-        noteidx = pitch%12
+        ocatave = int(pitch / 12) - 1
+        noteidx = pitch % 12
         self.noteletter = self.allnotes[noteidx] + str(ocatave)
 
         self.midipitch = pitch
@@ -137,22 +132,22 @@ class Note(object):
 
     def add_sharp(self):
         if not self.sharp:
-            self.set_note(self.get_pitch()+1)
+            self.set_note(self.get_pitch() + 1)
             self.sharp = True
 
     def add_flat(self):
         if not self.flat:
-            self.set_note(self.get_pitch()-1)
+            self.set_note(self.get_pitch() - 1)
             self.flat = True
 
     def remove_sharp(self):
         if self.sharp:
-            self.set_note(self.get_pitch()-1)
+            self.set_note(self.get_pitch() - 1)
             self.sharp = False
 
     def remove_flat(self):
         if self.flat:
-            self.set_note(self.get_pitch()+1)
+            self.set_note(self.get_pitch() + 1)
             self.flat = False
 
 
@@ -188,6 +183,7 @@ class NoteSequencer(object):
 
         self.cmd = None
         self.idx = 0
+
     def start(self):
         if self.playing:
             return
@@ -208,6 +204,7 @@ class NoteSequencer(object):
             return
 
         self.playing = True
+        self.synth.program(self.channel, self.program[0], self.program[1])
 
         # start from the beginning
         self.idx = 0
@@ -243,9 +240,11 @@ class NoteSequencer(object):
                 notes_list = [self.notes[self.idx]]
             while notes_list:
                 length, pitch = notes_list.pop(0)
-                if pitch != 0: # pitch 0 is a rest
+                if pitch != 0:  # pitch 0 is a rest
                     self.synth.noteon(self.channel, pitch, self.vel)  # play note
-                    self.sched.post_at_tick(self._note_off, tick + length * .9, pitch) # note off a bit later - slightly detached. 
+                    self.sched.post_at_tick(
+                        self._note_off, tick + length * 0.9, pitch
+                    )  # note off a bit later - slightly detached.
 
             # schedule the next note:
             self.idx += 1
@@ -258,6 +257,9 @@ class NoteSequencer(object):
         self.synth.noteoff(self.channel, pitch)
 
     def simon_says_on(self, tick, ignore):
+        print(self.notes)
+        print(self.callback_ons)
+        print(self.callback_offs)
         if self.idx < len(self.notes):
             length, pitch = self.notes[self.idx]
             cb_on = self.callback_ons[self.idx]

@@ -57,16 +57,8 @@ class MusicPuzzle(InstructionGroup):
         self.animations.add(self.music_bar)
         self.add(self.animations)
 
-        self.audio = Audio(2)
-        self.synth = Synth("./data/FluidR3_GM.sf2")
-
-        self.tempo_map = SimpleTempoMap(120)
-        self.sched = AudioScheduler(self.tempo_map)
-
-        self.sched.set_generator(self.synth)
-        self.audio.set_generator(self.sched)
-        self.actual_sound = PuzzleSound(notes, self.sched, self.synth)
-        self.user_sound = PuzzleSound(user_notes, self.sched, self.synth)
+        self.actual_sound = PuzzleSound(notes)
+        self.user_sound = PuzzleSound(user_notes)
 
         self.grid = Grid(num_tiles=9)
         self.add(self.grid)
@@ -108,8 +100,10 @@ class MusicPuzzle(InstructionGroup):
 
     def on_pitch_mode(self):
         self.state = "PITCH"
+
     def on_rhythm_mode(self):
         self.state = "RHYTHM"
+
     def on_key_mode(self):
         self.state = "KEY"
 
@@ -119,10 +113,27 @@ class MusicPuzzle(InstructionGroup):
         size = (self.grid.tile_side_len, self.grid.tile_side_len)
         pos = self.grid.grid_to_pixel((2, 2))
 
-        self.objects[(2, 2)] = Switch(size, self.grid.grid_to_pixel((2, 2)), self.on_pitch_mode, "./data/pitch_icon.png")
-        self.objects[(4, 6)] = Switch(size, self.grid.grid_to_pixel((4, 6)), self.on_rhythm_mode, "./data/rhythm_icon.png")
-        self.objects[(6, 2)] = Switch(size, self.grid.grid_to_pixel((6, 2)), self.on_key_mode, "./data/key_icon.jpeg")
-        self.objects[(8, 4)] = DoorTile(size, self.grid.grid_to_pixel((8, 4)), self.center_room)
+        self.objects[(2, 2)] = Switch(
+            size,
+            self.grid.grid_to_pixel((2, 2)),
+            self.on_pitch_mode,
+            "./data/pitch_icon.png",
+        )
+        self.objects[(4, 6)] = Switch(
+            size,
+            self.grid.grid_to_pixel((4, 6)),
+            self.on_rhythm_mode,
+            "./data/rhythm_icon.png",
+        )
+        self.objects[(6, 2)] = Switch(
+            size,
+            self.grid.grid_to_pixel((6, 2)),
+            self.on_key_mode,
+            "./data/key_icon.jpeg",
+        )
+        self.objects[(8, 4)] = DoorTile(
+            size, self.grid.grid_to_pixel((8, 4)), self.center_room
+        )
 
         self.add(PushMatrix())
         self.add(Translate(*self.grid.pos))
@@ -134,7 +145,8 @@ class MusicPuzzle(InstructionGroup):
 
     def on_update(self):
         self.animations.on_update()
-        self.audio.on_update()
+        self.actual_sound.on_update()
+        self.user_sound.on_update()
         self.key_label.set_text(f"Key: {self.user_key}")
         if self.is_game_over():
             self.add(self.game_over_window_color)
@@ -152,10 +164,10 @@ class MusicPuzzle(InstructionGroup):
     def on_layout(self, win_size):
         self.remove(self.character)
         self.remove(self.grid)
-        self.grid.on_layout((win_size[0],.75*win_size[1]))
+        self.grid.on_layout((win_size[0], 0.75 * win_size[1]))
         for pos, obj in self.objects.items():
             self.remove(obj)
-        
+
         self.add(self.grid)
         self.place_objects()
         self.character.on_layout(win_size)
