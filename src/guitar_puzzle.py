@@ -137,12 +137,12 @@ class GuitarPuzzle(InstructionGroup):
         self.objects = {}
         # Add door to switch between rooms
         size = (self.grid.tile_side_len, self.grid.tile_side_len)
-        self.objects[(4, 8)] = DoorTile(
-            size, self.grid.grid_to_pixel((4, 8)), self.center_room
+        self.objects[(0, 4)] = DoorTile(
+            size, self.grid.grid_to_pixel((0, 4)), self.center_room
         )
 
-        self.mummy = self.create_mummy((4, 7))
-        self.objects[(4, 7)] = self.mummy
+        self.mummy = self.create_mummy((4, 8))
+        self.objects[(4, 8)] = self.mummy
 
         if self.puzzle_on:
             self.simons = []

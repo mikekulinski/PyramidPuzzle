@@ -39,11 +39,11 @@ class CenterRoom(InstructionGroup):
         self.objects[(0, 4)] = DoorTile(
             size, self.grid.grid_to_pixel((0, 4)), MusicPuzzle(self)
         )
-        self.objects[(4, 0)] = DoorTile(
-            size, self.grid.grid_to_pixel((4, 0)), GuitarPuzzle(self)
-        )
         self.objects[(8, 4)] = DoorTile(
-            size, self.grid.grid_to_pixel((8, 4)), DrumsPuzzle(self)
+            size, self.grid.grid_to_pixel((8, 4)), GuitarPuzzle(self)
+        )
+        self.objects[(4, 0)] = DoorTile(
+            size, self.grid.grid_to_pixel((4, 0)), DrumsPuzzle(self)
         )
         self.objects[(4, 8)] = DoorTile(
             size, self.grid.grid_to_pixel((4, 8)), DrumsPuzzle(self)
