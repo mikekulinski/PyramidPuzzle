@@ -12,6 +12,8 @@ class Tile(InstructionGroup):
         self.size = size
         self.pos = pos
 
+        self.passable = True
+
         self.inside_color = Tile.base_color
         self.inside_rect = Rectangle(size=self.size, pos=self.pos)
         self.add(self.inside_color)

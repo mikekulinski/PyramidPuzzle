@@ -1,35 +1,23 @@
 from kivy.graphics import PopMatrix, PushMatrix, Translate
-from kivy.graphics.instructions import InstructionGroup
 
 from src.button import Button
-from src.character import Character
 from src.drums_puzzle import DrumsPuzzle
-from src.grid import DoorTile, Grid
+from src.grid import DoorTile
 from src.guitar_puzzle import GuitarPuzzle
 from src.piano_puzzle import MusicPuzzle
 
+from src.puzzle import Puzzle
 
-class CenterRoom(InstructionGroup):
+
+class CenterRoom(Puzzle):
     def __init__(self):
         super().__init__()
-        self.grid = Grid(num_tiles=9)
-        self.add(self.grid)
         self.place_objects()
 
-        self.character = Character(self)
-        self.add(self.character)
+    """ Mandatory Puzzle methods """
 
-    def is_valid_pos(self, pos):
-        if pos[0] < 0 or pos[0] >= self.grid.num_tiles:
-            return False
-        elif pos[1] < 0 or pos[1] >= self.grid.num_tiles:
-            return False
-
-        return True
-
-    def get_tile(self, pos):
-        assert self.is_valid_pos(pos)
-        return self.grid.get_tile(pos)
+    def is_game_over(self):
+        pass
 
     def place_objects(self):
         self.objects = {}
@@ -57,9 +45,6 @@ class CenterRoom(InstructionGroup):
 
         self.add(PopMatrix())
 
-    def on_update(self):
-        pass
-
     def on_player_input(self, button):
         if button in [Button.UP, Button.DOWN, Button.LEFT, Button.RIGHT]:
             x, y = button.value
@@ -70,6 +55,9 @@ class CenterRoom(InstructionGroup):
             if self.character.grid_pos in self.objects:
                 if isinstance(self.objects[self.character.grid_pos], DoorTile):
                     return self.objects[self.character.grid_pos].other_room
+
+    def on_update(self):
+        pass
 
     def on_layout(self, win_size):
         self.remove(self.character)
