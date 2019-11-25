@@ -1,11 +1,11 @@
 from kivy.graphics import PopMatrix, PushMatrix, Translate
 from kivy.graphics.instructions import InstructionGroup
 
-from src.bass_puzzle import BassPuzzle
 from src.button import Button
 from src.character import Character
 from src.drums_puzzle import DrumsPuzzle
 from src.grid import DoorTile, Grid
+from src.guitar_puzzle import GuitarPuzzle
 from src.piano_puzzle import MusicPuzzle
 
 
@@ -40,7 +40,7 @@ class CenterRoom(InstructionGroup):
             size, self.grid.grid_to_pixel((0, 4)), MusicPuzzle(self)
         )
         self.objects[(4, 0)] = DoorTile(
-            size, self.grid.grid_to_pixel((4, 0)), BassPuzzle(self)
+            size, self.grid.grid_to_pixel((4, 0)), GuitarPuzzle(self)
         )
         self.objects[(8, 4)] = DoorTile(
             size, self.grid.grid_to_pixel((8, 4)), DrumsPuzzle(self)

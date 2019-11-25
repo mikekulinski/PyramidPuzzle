@@ -63,7 +63,7 @@ class Mummy(Tile):
         self.on_interact()
 
 
-class BassPuzzle(InstructionGroup):
+class GuitarPuzzle(InstructionGroup):
     def __init__(self, center_room):
         super().__init__()
         self.center_room = center_room
