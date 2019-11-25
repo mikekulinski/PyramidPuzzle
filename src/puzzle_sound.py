@@ -1,26 +1,12 @@
-import sys
-
-sys.path.append("..")
-from common.core import BaseWidget, run, lookup
 from common.audio import Audio
 from common.clock import (
-    Clock,
-    SimpleTempoMap,
     AudioScheduler,
-    tick_str,
+    SimpleTempoMap,
     kTicksPerQuarter,
     quantize_tick_up,
 )
-from common.gfxutil import topleft_label
+from common.core import run
 from common.synth import Synth
-
-
-from kivy.graphics.instructions import InstructionGroup
-from kivy.graphics import Color, Ellipse, Line, Rectangle
-from kivy.graphics import PushMatrix, PopMatrix, Translate
-from kivy.clock import Clock as kivyClock
-
-import numpy as np
 
 
 class PuzzleSound(object):

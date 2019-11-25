@@ -2,7 +2,6 @@
 import sys
 
 import pygame
-from kivy.core.window import Window
 
 from common.core import BaseWidget, run
 from src.game import Game

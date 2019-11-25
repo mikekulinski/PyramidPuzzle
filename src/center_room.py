@@ -1,47 +1,12 @@
-import sys
-
-sys.path.append("..")
-from common.core import BaseWidget, run, lookup
-from common.gfxutil import (
-    topleft_label,
-    CEllipse,
-    KFAnim,
-    AnimGroup,
-    CRectangle,
-    CLabelRect,
-)
-
-from common.audio import Audio
-from common.mixer import Mixer
-from common.note import NoteGenerator, Envelope
-from common.wavegen import WaveGenerator, SpeedModulator
-from common.wavesrc import WaveBuffer, WaveFile, make_wave_buffers
-from common.synth import Synth
-
-from kivy.core.window import Window
-from kivy.clock import Clock as kivyClock
-from kivy.uix.label import Label
+from kivy.graphics import PopMatrix, PushMatrix, Translate
 from kivy.graphics.instructions import InstructionGroup
-from kivy.graphics import Color, Ellipse, Rectangle, Line
-from kivy.graphics import PushMatrix, PopMatrix, Translate, Scale, Rotate
-from src.piano_puzzle import MusicPuzzle
-from src.bass_puzzle import BassPuzzle
-from src.drums_puzzle import DrumsPuzzle
-from src.grid import Tile, Grid, DoorTile
-from src.puzzle_sound import Note, PuzzleSound
-from src.character import Character
-from common.button import Button
-from common.clock import (
-    Clock,
-    SimpleTempoMap,
-    AudioScheduler,
-    tick_str,
-    kTicksPerQuarter,
-    quantize_tick_up,
-)
 
-from random import randint, random, choice
-import numpy as np
+from src.bass_puzzle import BassPuzzle
+from src.button import Button
+from src.character import Character
+from src.drums_puzzle import DrumsPuzzle
+from src.grid import DoorTile, Grid
+from src.piano_puzzle import MusicPuzzle
 
 
 class CenterRoom(InstructionGroup):
@@ -117,4 +82,3 @@ class CenterRoom(InstructionGroup):
         self.place_objects()
         self.character.on_layout(win_size)
         self.add(self.character)
-

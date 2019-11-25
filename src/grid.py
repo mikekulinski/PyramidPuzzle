@@ -1,5 +1,3 @@
-# common imports
-import numpy as np
 from kivy.core.window import Window
 from kivy.graphics import Color, Line, PopMatrix, PushMatrix, Rectangle, Translate
 from kivy.graphics.instructions import InstructionGroup
@@ -58,6 +56,7 @@ class Switch(Tile):
     def deactivate(self):
         self.is_active = False
         self.set_color(color=Switch.inactive_color, source=self.icon_source)
+
 
 class DoorTile(Tile):
     def __init__(self, size, pos, other_room):

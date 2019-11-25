@@ -1,44 +1,12 @@
-import sys
-
-sys.path.append("..")
-from common.core import BaseWidget, run, lookup
-from common.gfxutil import (
-    topleft_label,
-    CEllipse,
-    KFAnim,
-    AnimGroup,
-    CRectangle,
-    CLabelRect,
-)
-
-from common.audio import Audio
-from common.mixer import Mixer
-from common.note import NoteGenerator, Envelope
-from common.wavegen import WaveGenerator, SpeedModulator
-from common.wavesrc import WaveBuffer, WaveFile, make_wave_buffers
-from common.synth import Synth
-
 from kivy.core.window import Window
-from kivy.clock import Clock as kivyClock
-from kivy.uix.label import Label
+from kivy.graphics import Color, PopMatrix, PushMatrix, Translate
 from kivy.graphics.instructions import InstructionGroup
-from kivy.graphics import Color, Ellipse, Rectangle, Line
-from kivy.graphics import PushMatrix, PopMatrix, Translate, Scale, Rotate
-from src.grid import Tile, Grid, DoorTile
-from src.puzzle_sound import Note, PuzzleSound
-from src.character import Character
-from common.button import Button
-from common.clock import (
-    Clock,
-    SimpleTempoMap,
-    AudioScheduler,
-    tick_str,
-    kTicksPerQuarter,
-    quantize_tick_up,
-)
 
-from random import randint, random, choice
-import numpy as np
+from common.gfxutil import CLabelRect, CRectangle
+from src.button import Button
+from src.character import Character
+from src.grid import DoorTile, Grid, Tile
+from src.puzzle_sound import Note, PuzzleSound
 
 # make audio loop so notes change in real time
 # map a 4 x 4 grid x axis is beat and y axis is instrument (hi-hat, bass drum, etc.)
@@ -289,4 +257,3 @@ class SequencerTile(Tile):
         for coord in coords:
             if coord in objects:
                 objects[coord].toggle()
-

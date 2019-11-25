@@ -1,5 +1,6 @@
 import pygame.locals
-from common.button import Button
+
+from src.button import Button
 
 
 class UserInput(object):

@@ -1,16 +1,8 @@
 # common imports
-from kivy.graphics.instructions import InstructionGroup
 from kivy.core.window import Window
+from kivy.graphics.instructions import InstructionGroup
 
-from src.character import Character
-from src.grid import Grid, Switch
-from common.button import Button
-from src.piano_puzzle import MusicPuzzle
-from src.bass_puzzle import BassPuzzle
-from src.drums_puzzle import DrumsPuzzle
 from src.center_room import CenterRoom
-
-FLOOR_SIZE = 9
 
 
 class Game(InstructionGroup):
@@ -41,4 +33,3 @@ class Game(InstructionGroup):
         self.remove(self.puzzle)
         self.puzzle.on_layout(win_size)
         self.add(self.puzzle)
-

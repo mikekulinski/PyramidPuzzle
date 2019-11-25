@@ -1,18 +1,22 @@
 from random import choice
 
 from kivy.core.window import Window
-from kivy.graphics import Color, Ellipse, Line, Rectangle
+from kivy.graphics import (
+    Color,
+    Ellipse,
+    Line,
+    PopMatrix,
+    PushMatrix,
+    Rectangle,
+    Translate,
+)
 from kivy.graphics.instructions import InstructionGroup
 
-from common.audio import Audio
-from common.clock import AudioScheduler, SimpleTempoMap
+from src.button import Button
 from common.gfxutil import AnimGroup, CLabelRect, CRectangle, KFAnim
-from kivy.graphics import PushMatrix, PopMatrix, Translate, Scale, Rotate
-from common.synth import Synth
-from src.puzzle_sound import Note, PuzzleSound
 from src.character import Character
-from src.grid import Grid, Switch, DoorTile
-from common.button import Button
+from src.grid import DoorTile, Grid, Switch
+from src.puzzle_sound import Note, PuzzleSound
 
 notes = (
     Note(480, 60),

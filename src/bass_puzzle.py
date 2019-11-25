@@ -2,10 +2,10 @@ from kivy.core.window import Window
 from kivy.graphics import Color, PopMatrix, PushMatrix, Translate
 from kivy.graphics.instructions import InstructionGroup
 
-from common.button import Button
 from common.gfxutil import CLabelRect, CRectangle
+from src.button import Button
 from src.character import Character
-from src.grid import Tile, Grid, DoorTile
+from src.grid import DoorTile, Grid, Tile
 from src.puzzle_sound import Note, PuzzleSound
 
 

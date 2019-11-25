@@ -1,10 +1,9 @@
 # common imports
 import numpy as np
-from kivy.graphics import Color
 from kivy.graphics.instructions import InstructionGroup
 
 from common.gfxutil import CRectangle
-from common.button import Button
+from src.button import Button
 
 
 class Character(InstructionGroup):
