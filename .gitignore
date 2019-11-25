@@ -5,3 +5,6 @@ __pycache__/
 data/FluidR3_GM.sf2
 
 **.pyc
+.vscode
+setup.cfg
+.DS_Store
