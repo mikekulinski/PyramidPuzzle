@@ -2,7 +2,7 @@
 from kivy.core.window import Window
 from kivy.graphics.instructions import InstructionGroup
 
-from src.center_room import CenterRoom
+from src.intro_room import IntroRoom
 
 
 class Game(InstructionGroup):
@@ -14,7 +14,7 @@ class Game(InstructionGroup):
 
     def __init__(self):
         super().__init__()
-        self.puzzle = CenterRoom()
+        self.puzzle = IntroRoom()
         self.win_size = (Window.width, Window.height)
 
     def on_player_input(self, button):

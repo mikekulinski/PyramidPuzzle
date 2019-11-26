@@ -1,12 +1,12 @@
-from kivy.core.window import Window
 from kivy.graphics import Color, PopMatrix, PushMatrix, Translate
 from kivy.graphics.instructions import InstructionGroup
 
-from common.gfxutil import CLabelRect, CRectangle
+from common.gfxutil import CRectangle
 from src.button import Button
-from src.character import Character
-from src.grid import DoorTile, Grid, Tile
+from src.grid import DoorTile, Tile
 from src.puzzle_sound import Note, PuzzleSound
+
+from src.puzzle import Puzzle
 
 
 class SimonSays(InstructionGroup):
@@ -15,6 +15,7 @@ class SimonSays(InstructionGroup):
         self.size = size
         self.pos = pos
 
+        self.passable = False
         self.unactive_color = Color(rgba=(*color.rgb, 1 / 3))
         self.active_color = Color(rgba=(*color.rgb, 1))
         self.active = False
@@ -47,7 +48,6 @@ class SimonSays(InstructionGroup):
         self.set_color(color=self.unactive_color)
 
     def on_finished_playing(self):
-        print("Done playing audio")
         self.puzzle.play_game(self.idx)
 
 
@@ -56,6 +56,7 @@ class Mummy(Tile):
         super().__init__(size, pos)
         self.on_interact = on_interact
         self.icon_source = icon_source
+        self.passable = False
 
         self.set_color(color=Tile.base_color, source=self.icon_source)
 
@@ -63,7 +64,7 @@ class Mummy(Tile):
         self.on_interact()
 
 
-class GuitarPuzzle(InstructionGroup):
+class GuitarPuzzle(Puzzle):
     def __init__(self, center_room):
         super().__init__()
         self.center_room = center_room
@@ -82,41 +83,11 @@ class GuitarPuzzle(InstructionGroup):
             Color(rgb=(1, 165 / 255, 0)),  # Orange
         ]
 
-        self.game_over_window_color = Color(rgba=(1, 1, 1, 1))
-        self.game_over_window = CRectangle(
-            cpos=(Window.width // 2, Window.height // 2),
-            csize=(Window.width // 2, Window.height // 5),
-        )
-        self.game_over_text_color = Color(rgba=(0, 0, 0, 1))
-        self.game_over_text = CLabelRect(
-            (Window.width // 2, Window.height // 2), "You Win!", 70
-        )
-
         # Setup audio
         self.notes = [Note(480, p) for p in (60, 64, 67, 72)]
         self.audio = PuzzleSound(self.notes)
 
-        # Setup visuals
-        self.grid = Grid(num_tiles=9)
-        self.add(self.grid)
-
         self.place_objects()
-
-        # Add the character to the game
-        self.character = Character(self)
-        self.add(self.character)
-
-    def is_valid_pos(self, pos):
-        if pos[0] < 0 or pos[0] >= self.grid.num_tiles:
-            return False
-        elif pos[1] < 0 or pos[1] >= self.grid.num_tiles:
-            return False
-
-        return True
-
-    def get_tile(self, pos):
-        assert self.is_valid_pos(pos)
-        return self.grid.get_tile(pos)
 
     def create_mummy(self, pos):
         size = (self.grid.tile_side_len, self.grid.tile_side_len)
@@ -132,6 +103,60 @@ class GuitarPuzzle(InstructionGroup):
         )
         color = self.colors[idx]
         return SimonSays(size, pos, color, idx, self.on_interact_simon_says, self)
+
+    def play_game(self, idx=None):
+        if not self.game_over and self.is_game_over():
+            self.on_game_over()
+
+        if self.game_over:
+            return
+
+        if self.cpu_turn:
+            notes = []
+            cb_ons = []
+            cb_offs = []
+            for i in self.correct_sequence[: self.note_index]:
+                notes.append(self.notes[i])
+                cb_ons.append(self.simons[i].activate)
+                cb_offs.append(self.simons[i].deactivate)
+            self.audio.update_sounds(notes, cb_ons, cb_offs)
+            self.audio.noteseq.start_simon_says()
+            self.cpu_turn = False
+            self.user_sequence = []
+        else:
+            if idx == self.correct_sequence[len(self.user_sequence)]:
+                self.user_sequence.append(idx)
+                if len(self.user_sequence) == (self.note_index):
+                    self.note_index += 1
+                    self.cpu_turn = True
+                    self.play_game()
+            else:
+                self.cpu_turn = True
+                self.play_game()
+
+    def on_interact_mummy(self):
+        self.puzzle_on = True
+        for pos, obj in self.objects.items():
+            self.remove(obj)
+        self.place_objects()
+
+        self.note_index = 1
+        self.cpu_turn = True
+        self.play_game()
+
+    def on_interact_simon_says(self, idx):
+        self.audio.update_sounds(
+            [self.notes[idx]],
+            [self.simons[idx].activate],
+            [self.simons[idx].deactivate],
+            self.simons[idx].on_finished_playing,
+        )
+        self.audio.noteseq.start_simon_says()
+
+    """ Mandatory Puzzle methods """
+
+    def is_game_over(self):
+        return self.note_index == len(self.correct_sequence) + 1
 
     def place_objects(self):
         self.objects = {}
@@ -160,65 +185,6 @@ class GuitarPuzzle(InstructionGroup):
 
         self.add(PopMatrix())
 
-    def play_game(self, idx=None):
-        if self.note_index == len(self.correct_sequence) + 1:
-            self.game_over()
-            return
-
-        if self.cpu_turn:
-            notes = []
-            cb_ons = []
-            cb_offs = []
-            for i in self.correct_sequence[: self.note_index]:
-                notes.append(self.notes[i])
-                cb_ons.append(self.simons[i].activate)
-                cb_offs.append(self.simons[i].deactivate)
-            print(notes, cb_ons, cb_offs)
-            self.audio.update_sounds(notes, cb_ons, cb_offs)
-            self.audio.noteseq.start_simon_says()
-            self.cpu_turn = False
-            self.user_sequence = []
-        else:
-            if idx == self.correct_sequence[len(self.user_sequence)]:
-                self.user_sequence.append(idx)
-                if len(self.user_sequence) == (self.note_index):
-                    self.note_index += 1
-                    self.cpu_turn = True
-                    self.play_game()
-            else:
-                self.cpu_turn = True
-                self.play_game()
-
-    def game_over(self):
-        self.add(self.game_over_window_color)
-        self.add(self.game_over_window)
-        self.add(self.game_over_text_color)
-        self.add(self.game_over_text)
-
-    def on_interact_mummy(self):
-        print("Interacted with mummy!")
-        self.puzzle_on = True
-        for pos, obj in self.objects.items():
-            self.remove(obj)
-        self.place_objects()
-
-        self.note_index = 1
-        self.cpu_turn = True
-        self.play_game()
-
-    def on_interact_simon_says(self, idx):
-        print("Playing simon says")
-        self.audio.update_sounds(
-            [self.notes[idx]],
-            [self.simons[idx].activate],
-            [self.simons[idx].deactivate],
-            self.simons[idx].on_finished_playing,
-        )
-        self.audio.noteseq.start_simon_says()
-
-    def on_update(self):
-        self.audio.on_update()
-
     def on_player_input(self, button):
         if button in [Button.UP, Button.DOWN, Button.LEFT, Button.RIGHT]:
             x, y = button.value
@@ -231,6 +197,9 @@ class GuitarPuzzle(InstructionGroup):
                     return self.objects[self.character.grid_pos].other_room
         elif button == Button.A:
             self.character.interact()
+
+    def on_update(self):
+        self.audio.on_update()
 
     def on_layout(self, win_size):
         self.remove(self.character)
@@ -246,12 +215,11 @@ class GuitarPuzzle(InstructionGroup):
         self.character.on_layout(win_size)
         self.add(self.character)
 
-        self.game_over_window_color = Color(rgba=(1, 1, 1, 1))
-        self.game_over_window = CRectangle(
-            cpos=(Window.width // 2, Window.height // 2),
-            csize=(Window.width // 2, Window.height // 5),
-        )
-        self.game_over_text_color = Color(rgba=(0, 0, 0, 1))
-        self.game_over_text = CLabelRect(
-            (Window.width // 2, Window.height // 2), "You Win!", 70
-        )
+        self.create_game_over_text(win_size)
+        if self.game_over:
+            self.remove(self.game_over_window_color)
+            self.remove(self.game_over_window)
+            self.remove(self.game_over_text_color)
+            self.remove(self.game_over_text)
+
+            self.on_game_over()

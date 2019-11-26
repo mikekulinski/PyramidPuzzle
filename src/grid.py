@@ -12,6 +12,8 @@ class Tile(InstructionGroup):
         self.size = size
         self.pos = pos
 
+        self.passable = True
+
         self.inside_color = Tile.base_color
         self.inside_rect = Rectangle(size=self.size, pos=self.pos)
         self.add(self.inside_color)
@@ -62,6 +64,13 @@ class DoorTile(Tile):
     def __init__(self, size, pos, other_room):
         super().__init__(size, pos)
         self.set_color(color=Color(rgba=(0, 0, 0, 1)))
+        self.other_room = other_room
+
+
+class PyramidTile(Tile):
+    def __init__(self, size, pos, other_room, source=None):
+        super().__init__(size, pos)
+        self.set_color(color=Tile.base_color, source=source)
         self.other_room = other_room
 
 

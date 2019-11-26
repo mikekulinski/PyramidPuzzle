@@ -1,14 +1,12 @@
 from kivy.graphics import PopMatrix, PushMatrix, Translate
 
 from src.button import Button
-from src.drums_puzzle import DrumsPuzzle
-from src.grid import DoorTile
-from src.guitar_puzzle import GuitarPuzzle
-from src.piano_puzzle import PianoPuzzle
+from src.center_room import CenterRoom
+from src.grid import PyramidTile
 from src.puzzle import Puzzle
 
 
-class CenterRoom(Puzzle):
+class IntroRoom(Puzzle):
     def __init__(self):
         super().__init__()
         self.place_objects()
@@ -21,19 +19,12 @@ class CenterRoom(Puzzle):
     def place_objects(self):
         self.objects = {}
 
-        size = (self.grid.tile_side_len, self.grid.tile_side_len)
+        size = (3 * self.grid.tile_side_len, 3 * self.grid.tile_side_len)
+        pos = self.grid.grid_to_pixel((8, 4))
+        pos = (pos[0] - 2 * self.grid.tile_side_len, pos[1])
 
-        self.objects[(0, 4)] = DoorTile(
-            size, self.grid.grid_to_pixel((0, 4)), PianoPuzzle(self)
-        )
-        self.objects[(8, 4)] = DoorTile(
-            size, self.grid.grid_to_pixel((8, 4)), GuitarPuzzle(self)
-        )
-        self.objects[(4, 0)] = DoorTile(
-            size, self.grid.grid_to_pixel((4, 0)), DrumsPuzzle(self)
-        )
-        self.objects[(4, 8)] = DoorTile(
-            size, self.grid.grid_to_pixel((4, 8)), DrumsPuzzle(self)
+        self.objects[(8, 4)] = PyramidTile(
+            size, pos, CenterRoom(), "./data/pyramid.png"
         )
 
         self.add(PushMatrix())
@@ -52,7 +43,7 @@ class CenterRoom(Puzzle):
             self.character.change_direction(button.value)
             self.character.move_player(new_location)
             if self.character.grid_pos in self.objects:
-                if isinstance(self.objects[self.character.grid_pos], DoorTile):
+                if isinstance(self.objects[self.character.grid_pos], PyramidTile):
                     return self.objects[self.character.grid_pos].other_room
 
     def on_update(self):
@@ -66,6 +57,8 @@ class CenterRoom(Puzzle):
             self.remove(obj)
 
         self.add(self.grid)
-        self.place_objects()
+
         self.character.on_layout(win_size)
         self.add(self.character)
+
+        self.place_objects()

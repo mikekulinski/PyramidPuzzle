@@ -2,11 +2,12 @@ from kivy.core.window import Window
 from kivy.graphics import Color, PopMatrix, PushMatrix, Translate
 from kivy.graphics.instructions import InstructionGroup
 
-from common.gfxutil import CLabelRect, CRectangle
+from common.gfxutil import CRectangle
 from src.button import Button
-from src.character import Character
-from src.grid import DoorTile, Grid, Tile
+from src.grid import DoorTile, Tile
 from src.puzzle_sound import Note, PuzzleSound
+
+from src.puzzle import Puzzle
 
 # make audio loop so notes change in real time
 # map a 4 x 4 grid x axis is beat and y axis is instrument (hi-hat, bass drum, etc.)
@@ -23,7 +24,7 @@ all_rests = [[Note(480, 0) for i in instruments] for _ in range(8)]
 # receive tile, toggle that tile and the surrounding ones
 
 
-class DrumsPuzzle(InstructionGroup):
+class DrumsPuzzle(Puzzle):
     def __init__(self, center_room):
         super().__init__()
         self.center_room = center_room
@@ -33,36 +34,26 @@ class DrumsPuzzle(InstructionGroup):
         self.beats = all_rests
         self.sound = PuzzleSound(self.beats, bank=128, loop=True)
 
-        self.grid = Grid(num_tiles=9)
-        self.add(self.grid)
         self.place_objects()
-
-        self.character = Character(self)
-        self.add(self.character)
 
         self.sequencer_tiles = []
 
-        self.game_over_window_color = Color(rgba=(1, 1, 1, 1))
-        self.game_over_window = CRectangle(
-            cpos=(Window.width // 2, Window.height // 2),
-            csize=(Window.width // 2, Window.height // 5),
-        )
-        self.game_over_text_color = Color(rgba=(0, 0, 0, 1))
-        self.game_over_text = CLabelRect(
-            (Window.width // 2, Window.height // 2), "You Win!", 70
-        )
+    def on_button_press(self):
+        self.objects[self.character.grid_pos].on_button_press()
+        self.objects[self.character.grid_pos].toggle_neighbors(self.objects, 4)
+        self.sound.update_sounds(self.beats)
+        self.sound.toggle()
 
-    def is_valid_pos(self, pos):
-        if pos[0] < 0 or pos[0] >= self.grid.num_tiles:
-            return False
-        elif pos[1] < 0 or pos[1] >= self.grid.num_tiles:
-            return False
+    """ Mandatory Puzzle methods """
 
+    def is_game_over(self):
+        for i in range(len(pattern)):
+            for j in range(len(pattern[i])):
+                if pattern[i][j] == "X" and not self.sequencer_tiles[i][j].beat_on:
+                    return False
+                if pattern[i][j] == " " and self.sequencer_tiles[i][j].beat_on:
+                    return False
         return True
-
-    def get_tile(self, pos):
-        assert self.is_valid_pos(pos)
-        return self.grid.get_tile(pos)
 
     def place_objects(self):
         self.objects = {}
@@ -100,15 +91,6 @@ class DrumsPuzzle(InstructionGroup):
 
         self.add(PopMatrix())
 
-    def on_update(self):
-        self.sound.on_update()
-        if self.sequencer_tiles:
-            if self.is_game_over():
-                self.add(self.game_over_window_color)
-                self.add(self.game_over_window)
-                self.add(self.game_over_text_color)
-                self.add(self.game_over_text)
-
     def on_player_input(self, button):
         if button in [Button.UP, Button.DOWN, Button.LEFT, Button.RIGHT]:
             x, y = button.value
@@ -126,42 +108,35 @@ class DrumsPuzzle(InstructionGroup):
         elif button == Button.B:
             self.sound.toggle()
 
-    def on_button_press(self):
-        self.objects[self.character.grid_pos].on_button_press()
-        self.objects[self.character.grid_pos].toggle_neighbors(self.objects, 4)
-        self.sound.update_sounds(self.beats)
-        self.sound.toggle()
-
-    def is_game_over(self):
-        for i in range(len(pattern)):
-            for j in range(len(pattern[i])):
-                if pattern[i][j] == "X" and not self.sequencer_tiles[i][j].beat_on:
-                    return False
-                if pattern[i][j] == " " and self.sequencer_tiles[i][j].beat_on:
-                    return False
-        return True
+    def on_update(self):
+        self.sound.on_update()
+        if self.sequencer_tiles:
+            if not self.game_over and self.is_game_over():
+                self.on_game_over()
 
     def on_layout(self, win_size):
         self.remove(self.character)
-        self.remove(self.grid)
-        self.grid.on_layout(win_size)
         for pos, obj in self.objects.items():
             self.remove(obj)
+        self.remove(self.grid)
 
+        self.grid.on_layout(win_size)
         self.add(self.grid)
         self.drum_graphics.on_layout(win_size)
+
         self.place_objects()
+
         self.character.on_layout(win_size)
         self.add(self.character)
-        self.game_over_window_color = Color(rgba=(1, 1, 1, 1))
-        self.game_over_window = CRectangle(
-            cpos=(win_size[0] // 2, win_size[1] // 2),
-            csize=(win_size[0] // 2, win_size[1] // 5),
-        )
-        self.game_over_text_color = Color(rgba=(0, 0, 0, 1))
-        self.game_over_text = CLabelRect(
-            (win_size[0] // 2, win_size[1] // 2), "You Win!", 70
-        )
+
+        self.create_game_over_text(win_size)
+        if self.game_over:
+            self.remove(self.game_over_window_color)
+            self.remove(self.game_over_window)
+            self.remove(self.game_over_text_color)
+            self.remove(self.game_over_text)
+
+            self.on_game_over()
 
 
 class DrumPatternGraphics(InstructionGroup):
