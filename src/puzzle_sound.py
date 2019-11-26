@@ -43,21 +43,20 @@ class PuzzleSound(object):
             else:
 
                 self.dur_midi.append([(n.get_dur(), n.get_pitch()) for n in note])
-        # if self.noteseq:
-        #     self.noteseq.stop()
-        # else:
-        self.noteseq = NoteSequencer(
-            self.sched,
-            self.synth,
-            1,
-            (self.bank, self.preset),
-            self.dur_midi,
-            loop=self.loop,
-            callback_ons=callback_ons,
-            callback_offs=callback_offs,
-            finished_playing=finished_playing,
-        )
-        # self.noteseq.notes = self.dur_midi
+        if not self.noteseq:
+            self.noteseq = NoteSequencer(
+                self.sched,
+                self.synth,
+                1,
+                (self.bank, self.preset),
+                self.dur_midi,
+                loop=self.loop,
+                callback_ons=callback_ons,
+                callback_offs=callback_offs,
+                finished_playing=finished_playing,
+            )
+        self.noteseq.stop()
+        self.noteseq.notes = self.dur_midi
 
     def toggle(self):
         self.noteseq.toggle()
@@ -243,9 +242,6 @@ class NoteSequencer(object):
         self.synth.noteoff(self.channel, pitch)
 
     def simon_says_on(self, tick, ignore):
-        print(self.notes)
-        print(self.callback_ons)
-        print(self.callback_offs)
         if self.idx < len(self.notes):
             length, pitch = self.notes[self.idx]
             cb_on = self.callback_ons[self.idx]
@@ -271,7 +267,3 @@ class NoteSequencer(object):
 
         now = self.sched.get_tick()
         self.cmd = self.sched.post_at_tick(self.simon_says_on, now + 240)
-
-
-if __name__ == "__main__":
-    run(MainWidget)
