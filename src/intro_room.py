@@ -23,9 +23,7 @@ class IntroRoom(Puzzle):
         pos = self.grid.grid_to_pixel((8, 4))
         pos = (pos[0] - 2 * self.grid.tile_side_len, pos[1])
 
-        self.objects[(8, 4)] = PyramidTile(
-            size, pos, CenterRoom(), "./data/pyramid.png"
-        )
+        self.objects[(8, 4)] = PyramidTile(size, pos, CenterRoom, "./data/pyramid.png")
 
         self.add(PushMatrix())
         self.add(Translate(*self.grid.pos))
@@ -44,7 +42,7 @@ class IntroRoom(Puzzle):
             self.character.move_player(new_location)
             if self.character.grid_pos in self.objects:
                 if isinstance(self.objects[self.character.grid_pos], PyramidTile):
-                    return self.objects[self.character.grid_pos].other_room
+                    return self.objects[self.character.grid_pos].other_room()
 
     def on_update(self):
         pass

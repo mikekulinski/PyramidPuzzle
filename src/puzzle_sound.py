@@ -5,7 +5,6 @@ from common.clock import (
     kTicksPerQuarter,
     quantize_tick_up,
 )
-from common.core import run
 from common.synth import Synth
 
 

@@ -8,16 +8,17 @@
 #
 #####################################################################
 
+import os.path
 import sys
+import time
+
+import numpy as np
+import pyaudio
+
+from common import core
 
 sys.path.append(".")
 sys.path.append("..")
-
-import pyaudio
-import numpy as np
-from common import core
-import time
-import os.path
 
 
 class Audio(object):
@@ -44,13 +45,14 @@ class Audio(object):
         if "-asio" in sys.argv:
             Audio.out_dev, Audio.in_dev = self._find_asio_devices()
 
-        print("using audio params:")
-        print(
-            f"  samplerate: {Audio.sample_rate}\n"
-            + f"  buffersize: {Audio.buffer_size}\n"
-            + f"  outputdevice: {Audio.out_dev}\n"
-            + f"  inputdevice: {Audio.in_dev}"
-        )
+        # print("using audio params:")
+        # print(
+        #     f"  samplerate: {Audio.sample_rate}\n"
+        #     + f"  buffersize: {Audio.buffer_size}\n"
+        #     + f"  outputdevice: {Audio.out_dev}\n"
+        #     + f"  inputdevice: {Audio.in_dev}"
+        # )
+        print("Creating audio object")
 
         # create output stream
         self.stream = self.audio.open(
