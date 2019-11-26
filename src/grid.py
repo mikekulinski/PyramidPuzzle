@@ -67,6 +67,13 @@ class DoorTile(Tile):
         self.other_room = other_room
 
 
+class PyramidTile(Tile):
+    def __init__(self, size, pos, other_room, source=None):
+        super().__init__(size, pos)
+        self.set_color(color=Tile.base_color, source=source)
+        self.other_room = other_room
+
+
 class Grid(InstructionGroup):
     def __init__(self, num_tiles=9, objects=[]):
         super().__init__()

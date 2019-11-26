@@ -13,7 +13,7 @@ from kivy.graphics import (
 from kivy.graphics.instructions import InstructionGroup
 
 from src.button import Button
-from common.gfxutil import AnimGroup, KFAnim
+from common.gfxutil import AnimGroup, CLabelRect, KFAnim
 from src.grid import DoorTile, Switch
 from src.puzzle_sound import Note, PuzzleSound
 
@@ -53,7 +53,7 @@ keys = {
 # when receiving instructions from controller, change note object and graphics
 
 
-class MusicPuzzle(Puzzle):
+class PianoPuzzle(Puzzle):
     def __init__(self, center_room):
         super().__init__()
         self.center_room = center_room

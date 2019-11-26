@@ -3,9 +3,10 @@ import sys
 
 import pygame
 
-from common.core import BaseWidget, run
+from common.core import BaseWidget, run, App
 from src.game import Game
 from src.user_input import UserInput
+from src.button import Button
 
 
 class MainWidget(BaseWidget):
@@ -46,7 +47,9 @@ class MainWidget(BaseWidget):
     def on_key_down(self, keycode, modifiers):
         if self.control_type == "keyboard":
             button = UserInput.on_keyboard_input(keycode, modifiers)
-            if button:
+            if button == Button.ESC:
+                App.get_running_app().stop()
+            elif button:
                 self.game.on_player_input(button)
 
     # will get called when the window size changes

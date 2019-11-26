@@ -24,3 +24,6 @@ class Button(Enum):
     LEFT = (-1, 0)
     RIGHT = (1, 0)
 
+    # Quit
+    ESC = -1
+

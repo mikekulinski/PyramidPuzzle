@@ -42,6 +42,8 @@ class UserInput(object):
             button = Button.A
         elif keycode[1] == "b":
             button = Button.B
+        elif keycode[1] == "escape":
+            button = Button.ESC
         else:
             print(f"UNMAPPED KEYPRESS: {keycode[1]}")
 
