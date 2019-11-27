@@ -160,6 +160,7 @@ class PianoPuzzle(Puzzle):
             self.music_bar.user_notes[0].get_pitch()
             == self.music_bar.actual_notes[0].get_pitch()
         )
+
         return same_key and same_dur and same_pitch
 
     def place_objects(self):
@@ -244,6 +245,7 @@ class PianoPuzzle(Puzzle):
         self.user_sound.on_update()
         self.key_label.set_text(f"Key: {self.user_key}")
         if not self.game_over and self.is_game_over():
+            self.center_room.on_finished_puzzle()
             self.on_game_over()
 
     def on_layout(self, win_size):

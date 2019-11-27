@@ -1,7 +1,6 @@
 from kivy.graphics import PopMatrix, PushMatrix, Translate, Color, Rectangle
 from kivy.core.window import Window
-from kivy.graphics import Color
-from common.gfxutil import CLabelRect, CRectangle
+from common.gfxutil import CLabelRect
 
 from src.button import Button
 from src.center_room import CenterRoom

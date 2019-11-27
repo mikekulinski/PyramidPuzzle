@@ -106,6 +106,7 @@ class GuitarPuzzle(Puzzle):
 
     def play_game(self, idx=None):
         if not self.game_over and self.is_game_over():
+            self.center_room.on_finished_puzzle()
             self.on_game_over()
 
         if self.game_over:

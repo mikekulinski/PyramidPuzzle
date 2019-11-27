@@ -112,6 +112,7 @@ class DrumsPuzzle(Puzzle):
         self.sound.on_update()
         if self.sequencer_tiles:
             if not self.game_over and self.is_game_over():
+                self.center_room.on_finished_puzzle()
                 self.on_game_over()
 
     def on_layout(self, win_size):
