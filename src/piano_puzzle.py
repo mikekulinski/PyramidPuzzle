@@ -14,7 +14,7 @@ from kivy.graphics.instructions import InstructionGroup
 
 from src.button import Button
 from common.gfxutil import AnimGroup, CLabelRect, KFAnim
-from src.grid import DoorTile, Switch
+from src.grid import DoorTile, Switch, Tile
 from src.puzzle_sound import Note, PuzzleSound
 
 from src.puzzle import Puzzle
@@ -65,10 +65,11 @@ class PianoPuzzle(Puzzle):
         self.actual_sound = PuzzleSound(notes)
         self.user_sound = PuzzleSound(user_notes)
 
-        self.place_objects()
-
         self.actual_key = "C"
         self.user_key = choice(key_names)
+
+        self.place_objects()
+
         self.key_label = CLabelRect(
             (Window.width // 30, 23 * Window.height // 32), f"Key: {self.user_key}", 34
         )
@@ -114,10 +115,8 @@ class PianoPuzzle(Puzzle):
             note.set_dur(durations[dur_index])
         self.user_sound.set_notes(user_notes)
 
-    def on_left_arrow(self):
+    def on_duration_change(self, dur_index):
         for note in user_notes:
-            dur_index = durations.index(note.get_dur())
-            dur_index = 0 if dur_index == 0 else dur_index - 1
             note.set_dur(durations[dur_index])
         self.user_sound.set_notes(user_notes)
 
@@ -168,24 +167,56 @@ class PianoPuzzle(Puzzle):
         size = (self.grid.tile_side_len, self.grid.tile_side_len)
         pos = self.grid.grid_to_pixel((2, 2))
 
-        self.objects[(2, 2)] = Switch(
+        #PITCH
+        for i in range(7): #pitch
+            self.objects[(i+1, 7)] = ControlsTile(
+                size,
+                self.grid.grid_to_pixel((i+1, 7)),
+                lambda idx=i: self.on_duration_change(idx),
+            )
+
+        self.pitch_block = MovingBlock(
             size,
-            self.grid.grid_to_pixel((2, 2)),
+            self.grid.grid_to_pixel((4, 7)),
             self.on_pitch_mode,
             "./data/pitch_icon.png",
         )
-        self.objects[(4, 6)] = Switch(
+        self.objects[(4, 7)] = self.pitch_block
+
+
+        #RHYTHM
+        for i in range(len(durations)): #rhythm
+            self.objects[(i+3, 2)] = ControlsTile(
+                size,
+                self.grid.grid_to_pixel((i+3, 2)),
+                lambda idx=i: self.on_duration_change(idx),
+            )
+
+        self.rhythm_block = MovingBlock(
             size,
-            self.grid.grid_to_pixel((4, 6)),
+            self.grid.grid_to_pixel((durations.index(duration)+3, 2)),
             self.on_rhythm_mode,
             "./data/rhythm_icon.png",
         )
-        self.objects[(6, 2)] = Switch(
+        self.objects[(durations.index(duration)+3, 2)] = self.rhythm_block
+
+        #KEY
+        for i in range(len(key_names)):
+            self.objects[(i+1, 5)] = ControlsTile(
+                size,
+                self.grid.grid_to_pixel((i+1, 5)),
+                lambda idx=i: self.on_duration_change(idx),
+            )
+
+        self.key_block = MovingBlock(
             size,
-            self.grid.grid_to_pixel((6, 2)),
+            self.grid.grid_to_pixel((key_names.index(self.user_key)+1, 5)),
             self.on_key_mode,
             "./data/key_icon.jpeg",
         )
+        self.objects[(key_names.index(self.user_key)+1, 5)] = self.key_block
+
+
         self.objects[(8, 4)] = DoorTile(
             size, self.grid.grid_to_pixel((8, 4)), self.center_room
         )
@@ -200,43 +231,23 @@ class PianoPuzzle(Puzzle):
 
     def on_player_input(self, button):
 
-        if self.state == "MOVEMENT":
-            if button in [Button.UP, Button.DOWN, Button.LEFT, Button.RIGHT]:
-                x, y = button.value
-                cur_location = self.character.grid_pos
-                new_location = (cur_location[0] + x, cur_location[1] + y)
-                self.character.change_direction(button.value)
-                self.character.move_player(new_location)
-                if self.character.grid_pos in self.objects:
-                    if isinstance(self.objects[self.character.grid_pos], DoorTile):
-                        return self.objects[self.character.grid_pos].other_room
-                    self.objects[self.character.grid_pos].activate()
-        else:
-            if self.state == "PITCH":
-                if button == Button.UP:
-                    self.on_up_arrow()
-                elif button == Button.DOWN:
-                    self.on_down_arrow()
-            elif self.state == "RHYTHM":
-                if button == Button.LEFT:
-                    self.on_left_arrow()
-                elif button == Button.RIGHT:
-                    self.on_right_arrow()
-            elif self.state == "KEY":
-                if button == Button.LEFT:
-                    self.on_L()
-                elif button == Button.RIGHT:
-                    self.on_R()
+        if button in [Button.UP, Button.DOWN, Button.LEFT, Button.RIGHT]:
+            x, y = button.value
+            cur_location = self.character.grid_pos
+            new_location = (cur_location[0] + x, cur_location[1] + y)
+            self.character.change_direction(button.value)
+            self.character.move_player(new_location)
+            if self.character.grid_pos in self.objects:
+                if isinstance(self.objects[self.character.grid_pos], DoorTile):
+                    return self.objects[self.character.grid_pos].other_room
+                #self.objects[self.character.grid_pos].activate()
+            # if self.character.grid_pos in self.objects:
 
-            if button == Button.MINUS:
-                self.play(actual=True)
-            elif button == Button.PLUS:
-                self.play(actual=False)
-            elif button == Button.B:
-                # Exit puzzle play and go back to movement
-                if self.character.grid_pos in self.objects:
-                    self.objects[self.character.grid_pos].deactivate()
-                self.state = "MOVEMENT"
+            # if self.character.grid_pos in self.objects:
+        if button == Button.MINUS:
+            self.play(actual=True)
+        elif button == Button.PLUS:
+            self.play(actual=False)
 
     def on_update(self):
         self.animations.on_update()
@@ -431,6 +442,33 @@ class NoteIcon(InstructionGroup):
     def on_update(self):
         self.circle.on_update()
         self.line.on_update()
+
+
+class MovingBlock(Tile):
+    color = Color(rgba=(.2, .8, .5, 1))
+    def __init__(self, size, pos, on_interact, icon_source):
+        super().__init__(size, pos)
+        self.on_interact = on_interact
+        self.icon_source = icon_source
+        self.passable = False
+
+        self.set_color(color=MovingBlock.color, source=self.icon_source)
+
+    def interact(self):
+        self.on_interact()
+
+
+class ControlsTile(Tile):
+    color = Color(rgba=(1, 0, 0, 1))
+    #tile that changes musical properties when moving block is on it
+    def __init__(self, size, pos, on_block_placement):
+        super().__init__(size, pos)
+        self.on_block_placement = on_block_placement
+
+        self.set_color(color=ControlsTile.color)
+
+    def on_block_placement(self):
+        self.on_block_placement()
 
 
 # if __name__ == "__main__":
