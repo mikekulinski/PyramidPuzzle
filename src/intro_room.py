@@ -1,4 +1,7 @@
-from kivy.graphics import PopMatrix, PushMatrix, Translate
+from kivy.graphics import PopMatrix, PushMatrix, Translate, Color, Rectangle
+from kivy.core.window import Window
+from kivy.graphics import Color
+from common.gfxutil import CLabelRect, CRectangle
 
 from src.button import Button
 from src.center_room import CenterRoom
@@ -9,7 +12,38 @@ from src.puzzle import Puzzle
 class IntroRoom(Puzzle):
     def __init__(self):
         super().__init__()
+        self.win_size = (Window.width, Window.height)
         self.place_objects()
+        self.create_instructions()
+
+    def create_instructions(self):
+        margin = self.grid.tile_side_len // 2
+        self.instructions_window_color = Color(rgba=(1, 1, 1, 1))
+        self.instructions_window = Rectangle(
+            pos=(margin, margin),
+            size=(
+                self.grid.grid_side_len - 2 * margin,
+                3 * self.grid.tile_side_len - 2 * margin,
+            ),
+        )
+        self.instructions_text_color = Color(rgba=(0, 0, 0, 1))
+        self.instructions_text = CLabelRect(
+            (self.win_size[0] // 2, self.win_size[1] // 6),
+            "Move around the room with the arrow keys\n"
+            + "Press 'a' to interact with objects",
+            40,
+        )
+
+        self.add(PushMatrix())
+        self.add(Translate(*self.grid.pos))
+
+        self.add(self.instructions_window_color)
+        self.add(self.instructions_window)
+
+        self.add(PopMatrix())
+
+        self.add(self.instructions_text_color)
+        self.add(self.instructions_text)
 
     """ Mandatory Puzzle methods """
 
@@ -48,11 +82,14 @@ class IntroRoom(Puzzle):
         pass
 
     def on_layout(self, win_size):
+        self.win_size = win_size
         self.remove(self.character)
         self.remove(self.grid)
         self.grid.on_layout(win_size)
         for pos, obj in self.objects.items():
             self.remove(obj)
+        self.remove(self.instructions_window)
+        self.remove(self.instructions_text)
 
         self.add(self.grid)
 
@@ -60,3 +97,4 @@ class IntroRoom(Puzzle):
         self.add(self.character)
 
         self.place_objects()
+        self.create_instructions()
