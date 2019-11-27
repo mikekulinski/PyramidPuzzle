@@ -87,51 +87,53 @@ class PianoPuzzle(Puzzle):
         self.state = "KEY"
 
     def play(self, actual=False):
-        self.music_bar.play()
         if actual:
+            print("Should be setting the cb_ons")
+            self.actual_sound.set_cb_ons([self.music_bar.play])
             self.actual_sound.toggle()
         else:
+            self.user_sound.set_cb_ons([self.music_bar.play])
             self.user_sound.toggle()
 
     def on_up_arrow(self):
         for note in user_notes:
             pitch = note.get_pitch()
             note.set_note(pitch + 1)
-        self.user_sound.update_sounds(user_notes)
+        self.user_sound.set_notes(user_notes)
 
     def on_down_arrow(self):
         for note in user_notes:
             pitch = note.get_pitch()
             note.set_note(pitch - 1)
-        self.user_sound.update_sounds(user_notes)
+        self.user_sound.set_notes(user_notes)
 
     def on_right_arrow(self):
         for note in user_notes:
             dur_index = durations.index(note.get_dur())
             dur_index = -1 if dur_index == len(durations) - 1 else dur_index + 1
             note.set_dur(durations[dur_index])
-        self.user_sound.update_sounds(user_notes)
+        self.user_sound.set_notes(user_notes)
 
     def on_left_arrow(self):
         for note in user_notes:
             dur_index = durations.index(note.get_dur())
             dur_index = 0 if dur_index == 0 else dur_index - 1
             note.set_dur(durations[dur_index])
-        self.user_sound.update_sounds(user_notes)
+        self.user_sound.set_notes(user_notes)
 
     def on_L(self):
         key_index = key_names.index(self.user_key)
         key_index = 0 if key_index == 0 else key_index - 1
         self.user_key = key_names[key_index]
         self.update_key()
-        self.user_sound.update_sounds(user_notes)
+        self.user_sound.set_notes(user_notes)
 
     def on_R(self):
         key_index = key_names.index(self.user_key)
         key_index = -1 if key_index == len(key_names) - 1 else key_index + 1
         self.user_key = key_names[key_index]
         self.update_key()
-        self.user_sound.update_sounds(user_notes)
+        self.user_sound.set_notes(user_notes)
 
     def update_key(self):
         key_sig = keys[self.user_key]
