@@ -10,9 +10,11 @@
 
 from common.clock import kTicksPerQuarter, quantize_tick_up
 
+
 class NoteSequencer(object):
     """Plays a single Sequence of notes. The sequence is a python list containing
     notes. Each note is (dur, pitch)."""
+
     def __init__(self, sched, synth, channel, program, notes, loop=True):
         super(NoteSequencer, self).__init__()
         self.sched = sched
@@ -64,18 +66,16 @@ class NoteSequencer(object):
         # play new note if available
         if idx < len(self.notes):
             dur, pitch = self.notes[idx]
-            if pitch: # pitch 0 is a rest
+            if pitch:  # pitch 0 is a rest
                 self.synth.noteon(self.channel, pitch, 60)
                 self.on_note = pitch
 
             # schedule the next note:
-            self.on_cmd = self.sched.post_at_tick(self._note_on, tick+dur, idx+1)
-
+            self.on_cmd = self.sched.post_at_tick(self._note_on, tick + dur, idx + 1)
 
     def _note_off(self):
         # terminate current note:
         if self.on_note:
             self.synth.noteoff(self.channel, self.on_note)
             self.on_note = 0
-
 

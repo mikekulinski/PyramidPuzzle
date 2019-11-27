@@ -41,7 +41,7 @@ class DrumsPuzzle(Puzzle):
     def on_button_press(self):
         self.objects[self.character.grid_pos].on_button_press()
         self.objects[self.character.grid_pos].toggle_neighbors(self.objects, 4)
-        self.sound.update_sounds(self.beats)
+        self.sound.set_notes(self.beats)
         self.sound.toggle()
 
     """ Mandatory Puzzle methods """

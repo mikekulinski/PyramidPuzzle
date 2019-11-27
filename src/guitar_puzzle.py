@@ -85,7 +85,7 @@ class GuitarPuzzle(Puzzle):
 
         # Setup audio
         self.notes = [Note(480, p) for p in (60, 64, 67, 72)]
-        self.audio = PuzzleSound(self.notes)
+        self.audio = PuzzleSound(self.notes, simon_says=True)
 
         self.place_objects()
 
@@ -119,8 +119,12 @@ class GuitarPuzzle(Puzzle):
                 notes.append(self.notes[i])
                 cb_ons.append(self.simons[i].activate)
                 cb_offs.append(self.simons[i].deactivate)
-            self.audio.update_sounds(notes, cb_ons, cb_offs)
-            self.audio.noteseq.start_simon_says()
+
+            self.audio.set_notes(notes)
+            self.audio.set_cb_ons(cb_ons)
+            self.audio.set_cb_offs(cb_offs)
+            self.audio.set_on_finished(None)
+            self.audio.note_seq.start_simon_says()
             self.cpu_turn = False
             self.user_sequence = []
         else:
@@ -145,13 +149,11 @@ class GuitarPuzzle(Puzzle):
         self.play_game()
 
     def on_interact_simon_says(self, idx):
-        self.audio.update_sounds(
-            [self.notes[idx]],
-            [self.simons[idx].activate],
-            [self.simons[idx].deactivate],
-            self.simons[idx].on_finished_playing,
-        )
-        self.audio.noteseq.start_simon_says()
+        self.audio.set_notes([self.notes[idx]])
+        self.audio.set_cb_ons([self.simons[idx].activate])
+        self.audio.set_cb_offs([self.simons[idx].deactivate])
+        self.audio.set_on_finished(self.simons[idx].on_finished_playing)
+        self.audio.note_seq.start_simon_says()
 
     """ Mandatory Puzzle methods """
 

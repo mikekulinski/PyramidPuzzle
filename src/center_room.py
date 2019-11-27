@@ -24,16 +24,16 @@ class CenterRoom(Puzzle):
         size = (self.grid.tile_side_len, self.grid.tile_side_len)
 
         self.objects[(0, 4)] = DoorTile(
-            size, self.grid.grid_to_pixel((0, 4)), PianoPuzzle(self)
+            size, self.grid.grid_to_pixel((0, 4)), PianoPuzzle
         )
         self.objects[(8, 4)] = DoorTile(
-            size, self.grid.grid_to_pixel((8, 4)), GuitarPuzzle(self)
+            size, self.grid.grid_to_pixel((8, 4)), GuitarPuzzle
         )
         self.objects[(4, 0)] = DoorTile(
-            size, self.grid.grid_to_pixel((4, 0)), DrumsPuzzle(self)
+            size, self.grid.grid_to_pixel((4, 0)), DrumsPuzzle
         )
         self.objects[(4, 8)] = DoorTile(
-            size, self.grid.grid_to_pixel((4, 8)), DrumsPuzzle(self)
+            size, self.grid.grid_to_pixel((4, 8)), DrumsPuzzle
         )
 
         self.add(PushMatrix())
@@ -53,7 +53,7 @@ class CenterRoom(Puzzle):
             self.character.move_player(new_location)
             if self.character.grid_pos in self.objects:
                 if isinstance(self.objects[self.character.grid_pos], DoorTile):
-                    return self.objects[self.character.grid_pos].other_room
+                    return self.objects[self.character.grid_pos].other_room(self)
 
     def on_update(self):
         pass
