@@ -88,7 +88,6 @@ class PianoPuzzle(Puzzle):
 
     def play(self, actual=False):
         if actual:
-            print("Should be setting the cb_ons")
             self.actual_sound.set_cb_ons([self.music_bar.play])
             self.actual_sound.toggle()
         else:

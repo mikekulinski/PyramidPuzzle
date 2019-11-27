@@ -118,20 +118,6 @@ class NoteSequencer(object):
         next_beat = quantize_tick_up(now, kTicksPerQuarter)
         self.cmd = self.sched.post_at_tick(self._note_on, next_beat)
 
-    def start_simon_says(self):
-        if self.playing:
-            return
-
-        self.playing = True
-        self.synth.program(self.channel, self.program[0], self.program[1])
-
-        # start from the beginning
-        self.idx = 0
-
-        # post the first note on the next quarter-note:
-        now = self.sched.get_tick()
-        self.cmd = self.sched.post_at_tick(self.simon_says_on, now + 240)
-
     def stop(self):
         if not self.playing:
             return
@@ -161,55 +147,39 @@ class NoteSequencer(object):
             for note in notes_list:
                 dur = note.get_dur()
                 pitch = note.get_pitch()
-                self.synth.noteon(self.channel, pitch, self.vel)  # play note
-                self.sched.post_at_tick(
-                    self._note_off, tick + dur * 0.9, pitch
-                )  # note off a bit later - slightly detached.
+                if pitch != 0:
+                    self.synth.noteon(self.channel, pitch, self.vel)  # play note
+                    self.sched.post_at_tick(
+                        self._note_off, tick + dur * 0.9, pitch
+                    )  # note off a bit later - slightly detached.
 
             # Call cb_on if it's there
-            if self.idx < len(self.cb_ons):
-                print("Played now bar")
+            if self.idx < len(self.cb_ons) and self.cb_ons[self.idx] is not None:
                 cb_on = self.cb_ons[self.idx]
                 cb_on()
-
-            # schedule the next note:
-            self.idx += 1
-            self.cmd = self.sched.post_at_tick(self._note_on, tick + dur)
-        else:
-            self.playing = False
-
-    def _note_off(self, tick, pitch):
-        # terminate current note:
-        self.synth.noteoff(self.channel, pitch)
-
-    def simon_says_on(self, tick, ignore):
-        if self.idx < len(self.notes):
-            note = self.notes[self.idx]
-            dur = note.get_dur()
-            pitch = note.get_pitch()
-            cb_on = self.cb_ons[self.idx]
-
-            # Play note and activate simon says tile
-            self.synth.noteon(self.channel, pitch, self.vel)
-            cb_on()
-
-            # Schedule note and tile to turn off
-            now = self.sched.get_tick()
-            self.cmd = self.sched.post_at_tick(self.simon_says_off, now + dur, pitch)
-            self.playing = True
         else:
             self.playing = False
             if self.on_finished:
                 self.on_finished()
 
-    def simon_says_off(self, tick, pitch):
+    def _note_off(self, tick, pitch):
+        # terminate current note:
         self.synth.noteoff(self.channel, pitch)
-        cb_off = self.cb_offs[self.idx]
-        cb_off()
-        self.idx += 1
 
-        now = self.sched.get_tick()
-        self.cmd = self.sched.post_at_tick(self.simon_says_on, now + 240)
+        # Call cb_off if it's there
+        if self.idx < len(self.cb_offs) and self.cb_offs[self.idx] is not None:
+            cb_off = self.cb_offs[self.idx]
+            cb_off()
+
+        if type(self.notes[self.idx]) is list:
+            notes_list = self.notes[self.idx]
+        else:
+            notes_list = [self.notes[self.idx]]
+
+        dur = notes_list[0].get_dur()
+
+        self.idx += 1
+        self.cmd = self.sched.post_at_tick(self._note_on, tick + dur)
 
 
 class Note(object):

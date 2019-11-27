@@ -84,7 +84,7 @@ class GuitarPuzzle(Puzzle):
         ]
 
         # Setup audio
-        self.notes = [Note(480, p) for p in (60, 64, 67, 72)]
+        self.notes = [Note(520, p) for p in (60, 64, 67, 72)]
         self.audio = PuzzleSound(self.notes, simon_says=True)
 
         self.place_objects()
@@ -124,7 +124,7 @@ class GuitarPuzzle(Puzzle):
             self.audio.set_cb_ons(cb_ons)
             self.audio.set_cb_offs(cb_offs)
             self.audio.set_on_finished(None)
-            self.audio.note_seq.start_simon_says()
+            self.audio.note_seq.start()
             self.cpu_turn = False
             self.user_sequence = []
         else:
@@ -153,7 +153,7 @@ class GuitarPuzzle(Puzzle):
         self.audio.set_cb_ons([self.simons[idx].activate])
         self.audio.set_cb_offs([self.simons[idx].deactivate])
         self.audio.set_on_finished(self.simons[idx].on_finished_playing)
-        self.audio.note_seq.start_simon_says()
+        self.audio.note_seq.start()
 
     """ Mandatory Puzzle methods """
 
