@@ -6,7 +6,7 @@ from src.grid import DoorTile
 from src.guitar_puzzle import GuitarPuzzle
 from src.piano_puzzle import PianoPuzzle
 from src.puzzle import Puzzle
-
+from src.bass_puzzle import BassPuzzle
 
 class CenterRoom(Puzzle):
     def __init__(self):
@@ -33,7 +33,7 @@ class CenterRoom(Puzzle):
             size, self.grid.grid_to_pixel((4, 0)), DrumsPuzzle(self)
         )
         self.objects[(4, 8)] = DoorTile(
-            size, self.grid.grid_to_pixel((4, 8)), DrumsPuzzle(self)
+            size, self.grid.grid_to_pixel((4, 8)), BassPuzzle(self)
         )
 
         self.add(PushMatrix())

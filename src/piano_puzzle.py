@@ -227,8 +227,10 @@ class PianoPuzzle(Puzzle):
                     self.on_R()
 
             if button == Button.MINUS:
+                print('-')
                 self.play(actual=True)
             elif button == Button.PLUS:
+                print("+")
                 self.play(actual=False)
             elif button == Button.B:
                 # Exit puzzle play and go back to movement
