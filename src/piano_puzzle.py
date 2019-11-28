@@ -120,16 +120,7 @@ class PianoPuzzle(Puzzle):
             note.set_dur(durations[dur_index])
         self.user_sound.set_notes(user_notes)
 
-    def on_L(self):
-        key_index = key_names.index(self.user_key)
-        key_index = 0 if key_index == 0 else key_index - 1
-        self.user_key = key_names[key_index]
-        self.update_key()
-        self.user_sound.set_notes(user_notes)
-
-    def on_R(self):
-        key_index = key_names.index(self.user_key)
-        key_index = -1 if key_index == len(key_names) - 1 else key_index + 1
+    def on_key_change(self, key_index):
         self.user_key = key_names[key_index]
         self.update_key()
         self.user_sound.set_notes(user_notes)
@@ -208,7 +199,7 @@ class PianoPuzzle(Puzzle):
             self.objects[(i+1, 5)] = ControlsTile(
                 size,
                 self.grid.grid_to_pixel((i+1, 5)),
-                lambda idx=i: self.on_duration_change(idx),
+                lambda idx=i: self.on_key_change(idx),
             )
 
         self.key_block = MovingBlock(
@@ -229,7 +220,6 @@ class PianoPuzzle(Puzzle):
         self.add(Translate(*self.grid.pos))
 
         for pos, obj in self.objects.items():
-            print(obj)
             self.add(obj)
 
         self.add(PopMatrix())
