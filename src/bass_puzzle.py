@@ -23,6 +23,7 @@ class BassPuzzle(Puzzle):
 		super().__init__()
 		self.center_room = center_room
 		self.fret_positions = [(1,4), (1,5), (1,6), (1,7)]
+
 		self.string_position_start = [(0,4), (0,5), (0,6), (0,7)]
 		self.string_position_end = [(8,4), (8,5), (8,6), (8,7)]
 
@@ -74,9 +75,11 @@ class BassPuzzle(Puzzle):
 			pixel_pos_end = (pixel_pos_end[0] + half_side*2, pixel_pos_end[1] + half_side)
 
 			self.objects[self.string_position_start[stringp]] = BassString(pixel_pos_start, pixel_pos_end, 5)
-		for fret in self.fret_positions:
+		for f in range(len(self.fret_positions)):
+			fret = self.fret_positions[f]
 			pos = self.grid.grid_to_pixel(fret)
-			self.objects[fret] = FretBlock(self.fsize,fret, pos, self.block_interact, "./data/boulder.jpg")
+			move_range = (self.string_position_start[f], self.string_position_end[f])
+			self.objects[fret] = FretBlock(self.fsize,fret, pos, self.block_interact,move_range, "./data/boulder.jpg")
 
 		self.add(PushMatrix())
 		self.add(Translate(*self.grid.pos))
@@ -87,33 +90,49 @@ class BassPuzzle(Puzzle):
 		self.add(PopMatrix())
 
 
-	def move_block(self):
-		pass
+	def move_block(self,new_location,x,y):
+		obj_loc = (new_location[0]+ x, new_location[1] + y)
+		print(obj_loc, self.objects[new_location].move_range)
+		if Puzzle.is_valid_pos(self, obj_loc) and self.valid_block_move(obj_loc, self.objects[new_location].move_range):
+			self.remove(self.objects[new_location])
+			obj = FretBlock(self.fsize, obj_loc, self.grid.grid_to_pixel(obj_loc), self.block_interact, self.objects[new_location].move_range,"./data/boulder.jpg")
+			del self.objects[new_location]
+
+			self.add(PushMatrix())
+			self.add(Translate(*self.grid.pos))
+			self.add(obj)
+			self.add(PopMatrix())
+
+			self.objects[obj_loc] = obj
+			return True
+		else:
+			return False
+
+	def valid_block_move(self, pos, move_range):
+		print(pos, move_range)
+
+
+		if move_range[0][0] < pos[0] < move_range[1][0] and move_range[0][1] <= pos[1] <= move_range[1][1]:
+			return True
+		else:
+			return False
+		
 	def on_update(self):
 		pass
 
 	def on_player_input(self, button):
 		if button in [Button.UP, Button.DOWN, Button.LEFT, Button.RIGHT]:
-
+			move_possible = True
 			x, y = button.value
 			cur_location = self.character.grid_pos
 			new_location = (cur_location[0] + x, cur_location[1] + y)
 			if new_location in self.objects:
 				if self.objects[new_location].moveable:
-					obj_loc = (new_location[0]+ x, new_location[1] + y)
-					self.remove(self.objects[new_location])
-					del self.objects[new_location]
-					obj = FretBlock(self.fsize, obj_loc, self.grid.grid_to_pixel(obj_loc), self.block_interact, "./data/boulder.jpg")
-					self.add(PushMatrix())
-					self.add(Translate(*self.grid.pos))
-
-					self.add(obj)
-					self.add(PopMatrix())
-
-					self.objects[obj_loc] = obj
-
+					move_possible = self.move_block(new_location, x,y)
 			self.character.change_direction(button.value)
-			self.character.move_player(new_location)
+
+			if move_possible:
+				self.character.move_player(new_location)
 			if self.character.grid_pos in self.objects:
 				if isinstance(self.objects[self.character.grid_pos], DoorTile):
 					return self.objects[self.character.grid_pos].other_room
@@ -163,8 +182,9 @@ class BassString(InstructionGroup):
 
 
 class FretBlock(Tile):
-	def __init__(self, size,grid_pos, pos, on_interact, icon_source):
+	def __init__(self, size,grid_pos, pos, on_interact, move_range, icon_source):
 		super().__init__(size,pos)
+		self.move_range = move_range
 		self.grid_pos = grid_pos
 		self.pos = pos
 		self.on_interact = on_interact
