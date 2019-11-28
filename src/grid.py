@@ -23,25 +23,7 @@ class Tile(InstructionGroup):
 		self.border_line = Line(rectangle=(pos[0], pos[1], size[0], size[1]))
 		self.add(self.border_color)
 		self.add(self.border_line)
-	def set_pos(self, new_pos):
-
-		old_pos = self.pos
-		self.pos = new_pos
-		self.remove(self.inside_rect)
-		self.remove(self.border_line)
-
-		self.inside_rect = Rectangle(size=self.size, pos=self.pos)
-
-		self.add(self.inside_color)
-		self.add(self.inside_rect)
-
-		self.border_line = Line(rectangle=(self.pos[0], self.pos[1], self.size[0], self.size[1]))
-
-		self.add(self.border_color)
-		self.add(self.border_line)
-
-
-
+		
 	def set_color(self, color, source=None):
 		self.remove(self.inside_rect)
 		self.remove(self.border_line)
