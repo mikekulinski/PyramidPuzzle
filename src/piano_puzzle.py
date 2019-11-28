@@ -149,6 +149,9 @@ class PianoPuzzle(Puzzle):
 
     """ Mandatory Puzzle methods """
 
+    def block_interact(self, pos):
+        pass
+
     def is_game_over(self):
         same_key = self.user_key == self.actual_key
         same_dur = (
@@ -163,9 +166,7 @@ class PianoPuzzle(Puzzle):
 
     def place_objects(self):
         self.objects = {}
-
         size = (self.grid.tile_side_len, self.grid.tile_side_len)
-        pos = self.grid.grid_to_pixel((2, 2))
 
         #PITCH
         for i in range(7): #pitch
@@ -178,7 +179,8 @@ class PianoPuzzle(Puzzle):
         self.pitch_block = MovingBlock(
             size,
             self.grid.grid_to_pixel((4, 7)),
-            self.on_pitch_mode,
+            ((1,7), (8,7)),
+            self.block_interact,
             "./data/pitch_icon.png",
         )
         self.objects[(4, 7)] = self.pitch_block
@@ -195,7 +197,8 @@ class PianoPuzzle(Puzzle):
         self.rhythm_block = MovingBlock(
             size,
             self.grid.grid_to_pixel((durations.index(duration)+3, 2)),
-            self.on_rhythm_mode,
+            ((3,2), (7,2)),
+            self.block_interact,
             "./data/rhythm_icon.png",
         )
         self.objects[(durations.index(duration)+3, 2)] = self.rhythm_block
@@ -211,7 +214,8 @@ class PianoPuzzle(Puzzle):
         self.key_block = MovingBlock(
             size,
             self.grid.grid_to_pixel((key_names.index(self.user_key)+1, 5)),
-            self.on_key_mode,
+            ((1,5), (7,5)),
+            self.block_interact,
             "./data/key_icon.jpeg",
         )
         self.objects[(key_names.index(self.user_key)+1, 5)] = self.key_block
@@ -225,25 +229,47 @@ class PianoPuzzle(Puzzle):
         self.add(Translate(*self.grid.pos))
 
         for pos, obj in self.objects.items():
+            print(obj)
             self.add(obj)
 
         self.add(PopMatrix())
 
-    def on_player_input(self, button):
+    def move_block(self,new_location,x,y):
+        obj_loc = (new_location[0]+ x, new_location[1] + y)
 
+        if self.is_valid_pos(obj_loc) and self.valid_block_move(obj_loc, self.objects[new_location].move_range):
+            self.remove(self.objects[new_location])
+            obj = MovingBlock(self.objects[new_location].size, self.grid.grid_to_pixel(obj_loc),self.objects[new_location].move_range, self.block_interact,self.objects[new_location].icon_source)
+            del self.objects[new_location]
+
+            self.add(PushMatrix())
+            self.add(Translate(*self.grid.pos))
+            self.add(obj)
+            self.add(PopMatrix())
+
+            self.objects[obj_loc] = obj
+            return True
+        else:
+            return False
+
+    def valid_block_move(self, pos, move_range):
+        return move_range[0][0] <= pos[0] < move_range[1][0] and move_range[0][1] <= pos[1] <= move_range[1][1]
+
+    def on_player_input(self, button):
         if button in [Button.UP, Button.DOWN, Button.LEFT, Button.RIGHT]:
+            move_possible = True
             x, y = button.value
             cur_location = self.character.grid_pos
             new_location = (cur_location[0] + x, cur_location[1] + y)
+            if new_location in self.objects:
+                if self.objects[new_location].moveable:
+                    move_possible = self.move_block(new_location, x,y)
             self.character.change_direction(button.value)
-            self.character.move_player(new_location)
+            if move_possible:
+                self.character.move_player(new_location)
             if self.character.grid_pos in self.objects:
                 if isinstance(self.objects[self.character.grid_pos], DoorTile):
                     return self.objects[self.character.grid_pos].other_room
-                #self.objects[self.character.grid_pos].activate()
-            # if self.character.grid_pos in self.objects:
-
-            # if self.character.grid_pos in self.objects:
         if button == Button.MINUS:
             self.play(actual=True)
         elif button == Button.PLUS:
@@ -446,11 +472,13 @@ class NoteIcon(InstructionGroup):
 
 class MovingBlock(Tile):
     color = Color(rgba=(.2, .8, .5, 1))
-    def __init__(self, size, pos, on_interact, icon_source):
+    def __init__(self, size, pos, move_range, on_interact, icon_source):
         super().__init__(size, pos)
+        self.move_range = move_range
         self.on_interact = on_interact
         self.icon_source = icon_source
         self.passable = False
+        self.moveable = True
 
         self.set_color(color=MovingBlock.color, source=self.icon_source)
 
@@ -464,12 +492,11 @@ class ControlsTile(Tile):
     def __init__(self, size, pos, on_block_placement):
         super().__init__(size, pos)
         self.on_block_placement = on_block_placement
+        self.passable = True
+        self.moveable = False
 
         self.set_color(color=ControlsTile.color)
 
     def on_block_placement(self):
         self.on_block_placement()
 
-
-# if __name__ == "__main__":
-#     run(MainWidget)
