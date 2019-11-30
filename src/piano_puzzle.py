@@ -76,17 +76,6 @@ class PianoPuzzle(Puzzle):
         self.add(Color(rgba=(1, 1, 1, 1)))
         self.add(self.key_label)
 
-        self.state = "MOVEMENT"
-
-    def on_pitch_mode(self):
-        self.state = "PITCH"
-
-    def on_rhythm_mode(self):
-        self.state = "RHYTHM"
-
-    def on_key_mode(self):
-        self.state = "KEY"
-
     def play(self, actual=False):
         if actual:
             print("Should be setting the cb_ons")
@@ -106,13 +95,6 @@ class PianoPuzzle(Puzzle):
         for note in user_notes:
             pitch = note.get_pitch()
             note.set_note(pitch - 1)
-        self.user_sound.set_notes(user_notes)
-
-    def on_right_arrow(self):
-        for note in user_notes:
-            dur_index = durations.index(note.get_dur())
-            dur_index = -1 if dur_index == len(durations) - 1 else dur_index + 1
-            note.set_dur(durations[dur_index])
         self.user_sound.set_notes(user_notes)
 
     def on_duration_change(self, dur_index):
@@ -139,9 +121,6 @@ class PianoPuzzle(Puzzle):
                 note.add_flat()
 
     """ Mandatory Puzzle methods """
-
-    def block_interact(self, pos):
-        pass
 
     def is_game_over(self):
         same_key = self.user_key == self.actual_key
@@ -171,7 +150,6 @@ class PianoPuzzle(Puzzle):
             size,
             self.grid.grid_to_pixel((4, 7)),
             ((1,7), (8,7)),
-            self.block_interact,
             "./data/pitch_icon.png",
         )
         self.objects[(4, 7)] = self.pitch_block
@@ -189,7 +167,6 @@ class PianoPuzzle(Puzzle):
             size,
             self.grid.grid_to_pixel((durations.index(duration)+3, 2)),
             ((3,2), (7,2)),
-            self.block_interact,
             "./data/rhythm_icon.png",
         )
         self.objects[(durations.index(duration)+3, 2)] = self.rhythm_block
@@ -206,7 +183,6 @@ class PianoPuzzle(Puzzle):
             size,
             self.grid.grid_to_pixel((key_names.index(self.user_key)+1, 5)),
             ((1,5), (7,5)),
-            self.block_interact,
             "./data/key_icon.jpeg",
         )
         self.objects[(key_names.index(self.user_key)+1, 5)] = self.key_block
@@ -229,7 +205,8 @@ class PianoPuzzle(Puzzle):
 
         if self.is_valid_pos(obj_loc) and self.valid_block_move(obj_loc, self.objects[new_location].move_range):
             self.remove(self.objects[new_location])
-            obj = MovingBlock(self.objects[new_location].size, self.grid.grid_to_pixel(obj_loc),self.objects[new_location].move_range, self.block_interact,self.objects[new_location].icon_source)
+            self.objects[obj_loc].on_block_placement()
+            obj = MovingBlock(self.objects[new_location].size, self.grid.grid_to_pixel(obj_loc),self.objects[new_location].move_range, self.objects[new_location].icon_source)
             del self.objects[new_location]
 
             self.add(PushMatrix())
@@ -462,31 +439,27 @@ class NoteIcon(InstructionGroup):
 
 class MovingBlock(Tile):
     color = Color(rgba=(.2, .8, .5, 1))
-    def __init__(self, size, pos, move_range, on_interact, icon_source):
+    def __init__(self, size, pos, move_range, icon_source, on_block_placement):
         super().__init__(size, pos)
         self.move_range = move_range
-        self.on_interact = on_interact
         self.icon_source = icon_source
         self.passable = False
         self.moveable = True
+        self.on_block_placement = on_block_placement
 
         self.set_color(color=MovingBlock.color, source=self.icon_source)
 
-    def interact(self):
-        self.on_interact()
+    def on_block_placement(self):
+        self.on_block_placement()
 
 
 class ControlsTile(Tile):
     color = Color(rgba=(1, 0, 0, 1))
     #tile that changes musical properties when moving block is on it
-    def __init__(self, size, pos, on_block_placement):
+    def __init__(self, size, pos):
         super().__init__(size, pos)
-        self.on_block_placement = on_block_placement
         self.passable = True
         self.moveable = False
 
         self.set_color(color=ControlsTile.color)
-
-    def on_block_placement(self):
-        self.on_block_placement()
 
