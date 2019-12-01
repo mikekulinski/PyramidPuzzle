@@ -36,7 +36,8 @@ all_notes = [n + "4" for n in names]
 all_notes.extend([n + "5" for n in "CDEF"])
 durations = [120, 240, 480, 960]
 duration = choice(durations)
-user_notes = [Note(duration, n.get_pitch() + 3) for n in notes]
+pitch_shift = choice(range(-3, 4))
+user_notes = [Note(duration, n.get_pitch() + pitch_shift) for n in notes]
 key_names = ["C", "G", "D", "F", "Bb", "Eb"]
 keys = {
     "C": {"#": [], "b": []},
@@ -85,16 +86,11 @@ class PianoPuzzle(Puzzle):
             self.user_sound.set_cb_ons([self.music_bar.play])
             self.user_sound.toggle()
 
-    def on_up_arrow(self):
+    def on_pitch_change(self, pitch_index):
+        offset = 1 if self.character.direction == Button.RIGHT.value else -1
         for note in user_notes:
             pitch = note.get_pitch()
-            note.set_note(pitch + 1)
-        self.user_sound.set_notes(user_notes)
-
-    def on_down_arrow(self):
-        for note in user_notes:
-            pitch = note.get_pitch()
-            note.set_note(pitch - 1)
+            note.set_note(pitch + offset)
         self.user_sound.set_notes(user_notes)
 
     def on_duration_change(self, dur_index):
@@ -139,51 +135,44 @@ class PianoPuzzle(Puzzle):
         size = (self.grid.tile_side_len, self.grid.tile_side_len)
 
         #PITCH
-        for i in range(7): #pitch
-            self.objects[(i+1, 7)] = ControlsTile(
-                size,
-                self.grid.grid_to_pixel((i+1, 7)),
-                lambda idx=i: self.on_duration_change(idx),
-            )
+        pitch_color = Color(rgba=(.2, .5, 1, 1))
+        for i in range(7): #rhythm
+            self.grid.get_tile((i+1, 7)).set_color(pitch_color)
 
         self.pitch_block = MovingBlock(
             size,
             self.grid.grid_to_pixel((4, 7)),
             ((1,7), (8,7)),
             "./data/pitch_icon.png",
+            self.on_pitch_change,
         )
         self.objects[(4, 7)] = self.pitch_block
 
-
         #RHYTHM
+        rhythm_color = Color(rgba=(0, .5, .5, 1))
         for i in range(len(durations)): #rhythm
-            self.objects[(i+3, 2)] = ControlsTile(
-                size,
-                self.grid.grid_to_pixel((i+3, 2)),
-                lambda idx=i: self.on_duration_change(idx),
-            )
+            self.grid.get_tile((i+3, 2)).set_color(rhythm_color)
 
         self.rhythm_block = MovingBlock(
             size,
             self.grid.grid_to_pixel((durations.index(duration)+3, 2)),
             ((3,2), (7,2)),
             "./data/rhythm_icon.png",
+            self.on_duration_change,
         )
         self.objects[(durations.index(duration)+3, 2)] = self.rhythm_block
 
         #KEY
+        key_color = Color(rgba=(.2, .5, 0, 1))
         for i in range(len(key_names)):
-            self.objects[(i+1, 5)] = ControlsTile(
-                size,
-                self.grid.grid_to_pixel((i+1, 5)),
-                lambda idx=i: self.on_key_change(idx),
-            )
+            self.grid.get_tile((i+1, 5)).set_color(key_color)
 
         self.key_block = MovingBlock(
             size,
             self.grid.grid_to_pixel((key_names.index(self.user_key)+1, 5)),
             ((1,5), (7,5)),
             "./data/key_icon.jpeg",
+            self.on_key_change,
         )
         self.objects[(key_names.index(self.user_key)+1, 5)] = self.key_block
 
@@ -205,8 +194,7 @@ class PianoPuzzle(Puzzle):
 
         if self.is_valid_pos(obj_loc) and self.valid_block_move(obj_loc, self.objects[new_location].move_range):
             self.remove(self.objects[new_location])
-            self.objects[obj_loc].on_block_placement()
-            obj = MovingBlock(self.objects[new_location].size, self.grid.grid_to_pixel(obj_loc),self.objects[new_location].move_range, self.objects[new_location].icon_source)
+            obj = MovingBlock(self.objects[new_location].size, self.grid.grid_to_pixel(obj_loc),self.objects[new_location].move_range, self.objects[new_location].icon_source, self.objects[new_location].callback)
             del self.objects[new_location]
 
             self.add(PushMatrix())
@@ -215,6 +203,7 @@ class PianoPuzzle(Puzzle):
             self.add(PopMatrix())
 
             self.objects[obj_loc] = obj
+            self.objects[obj_loc].on_block_placement(obj_loc)
             return True
         else:
             return False
@@ -228,10 +217,10 @@ class PianoPuzzle(Puzzle):
             x, y = button.value
             cur_location = self.character.grid_pos
             new_location = (cur_location[0] + x, cur_location[1] + y)
+            self.character.change_direction(button.value)
             if new_location in self.objects:
                 if self.objects[new_location].moveable:
                     move_possible = self.move_block(new_location, x,y)
-            self.character.change_direction(button.value)
             if move_possible:
                 self.character.move_player(new_location)
             if self.character.grid_pos in self.objects:
@@ -439,27 +428,16 @@ class NoteIcon(InstructionGroup):
 
 class MovingBlock(Tile):
     color = Color(rgba=(.2, .8, .5, 1))
-    def __init__(self, size, pos, move_range, icon_source, on_block_placement):
+    def __init__(self, size, pos, move_range, icon_source, callback):
         super().__init__(size, pos)
         self.move_range = move_range
         self.icon_source = icon_source
         self.passable = False
         self.moveable = True
-        self.on_block_placement = on_block_placement
+        self.callback = callback
 
         self.set_color(color=MovingBlock.color, source=self.icon_source)
 
-    def on_block_placement(self):
-        self.on_block_placement()
-
-
-class ControlsTile(Tile):
-    color = Color(rgba=(1, 0, 0, 1))
-    #tile that changes musical properties when moving block is on it
-    def __init__(self, size, pos):
-        super().__init__(size, pos)
-        self.passable = True
-        self.moveable = False
-
-        self.set_color(color=ControlsTile.color)
-
+    def on_block_placement(self, pos):
+        idx = pos[0] - self.move_range[0][0]
+        self.callback(idx)
