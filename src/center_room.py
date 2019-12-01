@@ -11,6 +11,7 @@ from src.puzzle import Puzzle
 class CenterRoom(Puzzle):
     def __init__(self):
         super().__init__()
+        self.create_objects()
         self.place_objects()
 
     """ Mandatory Puzzle methods """
@@ -18,7 +19,7 @@ class CenterRoom(Puzzle):
     def is_game_over(self):
         pass
 
-    def place_objects(self):
+    def create_objects(self):
         self.objects = {}
 
         size = (self.grid.tile_side_len, self.grid.tile_side_len)
@@ -36,6 +37,7 @@ class CenterRoom(Puzzle):
             size, self.grid.grid_to_pixel((4, 8)), DrumsPuzzle
         )
 
+    def place_objects(self):
         self.add(PushMatrix())
         self.add(Translate(*self.grid.pos))
 
@@ -53,7 +55,9 @@ class CenterRoom(Puzzle):
             self.character.move_player(new_location)
             if self.character.grid_pos in self.objects:
                 if isinstance(self.objects[self.character.grid_pos], DoorTile):
-                    return self.objects[self.character.grid_pos].other_room(self)
+                    if not isinstance(self.objects[self.character.grid_pos].other_room, Puzzle):
+                        self.objects[self.character.grid_pos].other_room = self.objects[self.character.grid_pos].other_room(self)
+                    return self.objects[self.character.grid_pos].other_room
 
     def on_update(self):
         pass
