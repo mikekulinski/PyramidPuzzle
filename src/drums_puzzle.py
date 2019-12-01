@@ -113,6 +113,11 @@ class DrumsPuzzle(Puzzle):
         if self.sequencer_tiles:
             if not self.game_over and self.is_game_over():
                 self.on_game_over()
+                size = (self.grid.tile_side_len, self.grid.tile_side_len)
+                self.objects[(4, 8)] = DoorTile(
+                    size, self.grid.grid_to_pixel((4, 8)), self.center_room
+                )
+                self.add(self.objects[(4, 8)])
 
     def on_layout(self, win_size):
         self.remove(self.character)
