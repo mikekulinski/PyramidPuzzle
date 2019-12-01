@@ -14,7 +14,12 @@ from src.puzzle import Puzzle
 # no concept of actual sound
 
 pattern = ["X  X", " XX ", "XX  ", "  X "]
-
+levels = {
+        0: [" X  ", "XXX ", " X  ", "    "],
+        1: ["XX  ", "X  X", "  XX", "   X"],
+        2: ["  XX", " X  ", "X  X", "X XX"],
+        3: ["X  X", " XX ", "XX  ", "  X "],
+}
 
 # hi-hat, snare, bass drum, tambourine
 instruments = [42, 38, 36, 54]
