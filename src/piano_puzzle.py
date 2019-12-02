@@ -19,25 +19,62 @@ from src.puzzle_sound import Note, PuzzleSound
 
 from src.puzzle import Puzzle
 
-notes = (
-    Note(480, 60),
-    Note(480, 62),
-    Note(480, 64),
-    Note(480, 65),
-    Note(480, 67),
-    Note(480, 69),
-    Note(480, 71),
-    Note(480, 72),
-)
+levels = {
+        0: (
+            Note(480, 60),
+            Note(480, 62),
+            Note(480, 65),
+            Note(480, 67),
+            Note(480, 70),
+            Note(480, 72),
+            Note(480, 70),
+            Note(480, 72),
+        ),
+        1: (
+            Note(480, 69),
+            Note(480, 62),
+            Note(480, 64),
+            Note(480, 65),
+            Note(480, 67),
+            Note(480, 69),
+            Note(480, 71),
+            Note(480, 72),
+            Note(480, 60),
+            Note(480, 62),
+            Note(480, 64),
+            Note(480, 65),
+            Note(480, 67),
+            Note(480, 69),
+            Note(480, 71),
+            Note(480, 72),
+        ),
+        2: (
+            Note(480, 60),
+            Note(480, 62),
+            Note(480, 64),
+            Note(480, 65),
+            Note(480, 67),
+            Note(480, 69),
+            Note(480, 71),
+            Note(480, 72),
+        ),
+        3: (
+            Note(480, 60),
+            Note(480, 62),
+            Note(480, 64),
+            Note(480, 65),
+            Note(480, 67),
+            Note(480, 69),
+            Note(480, 71),
+            Note(480, 72),
+        ),
+}
 
 notes_w_staff_lines = ["E4", "G4", "B4", "D5", "F5"]
 names = "CDEFGAB"
 all_notes = [n + "4" for n in names]
 all_notes.extend([n + "5" for n in "CDEF"])
 durations = [120, 240, 480, 960]
-duration = choice(durations)
-pitch_shift = choice(range(-3, 4))
-user_notes = [Note(duration, n.get_pitch() + pitch_shift) for n in notes]
 key_names = ["C", "G", "D", "F", "Bb", "Eb"]
 keys = {
     "C": {"#": [], "b": []},
@@ -55,16 +92,21 @@ keys = {
 
 
 class PianoPuzzle(Puzzle):
-    def __init__(self, center_room):
+    def __init__(self, center_room, level=0):
         super().__init__()
         self.center_room = center_room
         self.animations = AnimGroup()
-        self.music_bar = MusicBar(notes, user_notes)
+        self.level = level
+        self.notes = levels[level]
+        duration = choice(durations)
+        pitch_shift = choice(range(-3, 4))
+        self.user_notes = [Note(duration, n.get_pitch() + pitch_shift) for n in self.notes]
+        self.music_bar = MusicBar(self.notes, self.user_notes)
         self.animations.add(self.music_bar)
         self.add(self.animations)
 
-        self.actual_sound = PuzzleSound(notes)
-        self.user_sound = PuzzleSound(user_notes)
+        self.actual_sound = PuzzleSound(self.notes)
+        self.user_sound = PuzzleSound(self.user_notes)
 
         self.actual_key = "C"
         self.user_key = choice(key_names)
@@ -88,24 +130,24 @@ class PianoPuzzle(Puzzle):
 
     def on_pitch_change(self, pitch_index):
         offset = 1 if self.character.direction == Button.RIGHT.value else -1
-        for note in user_notes:
+        for note in self.user_notes:
             pitch = note.get_pitch()
             note.set_note(pitch + offset)
-        self.user_sound.set_notes(user_notes)
+        self.user_sound.set_notes(self.user_notes)
 
     def on_duration_change(self, dur_index):
-        for note in user_notes:
+        for note in self.user_notes:
             note.set_dur(durations[dur_index])
-        self.user_sound.set_notes(user_notes)
+        self.user_sound.set_notes(self.user_notes)
 
     def on_key_change(self, key_index):
         self.user_key = key_names[key_index]
         self.update_key()
-        self.user_sound.set_notes(user_notes)
+        self.user_sound.set_notes(self.user_notes)
 
     def update_key(self):
         key_sig = keys[self.user_key]
-        for note in user_notes:
+        for note in self.user_notes:
             if note.get_letter()[0] not in key_sig["#"]:
                 note.remove_sharp()
             if note.get_letter()[0] not in key_sig["b"]:
@@ -130,7 +172,7 @@ class PianoPuzzle(Puzzle):
         )
         return same_key and same_dur and same_pitch
 
-    def place_objects(self):
+    def create_objects(self):
         self.objects = {}
         size = (self.grid.tile_side_len, self.grid.tile_side_len)
 
@@ -152,7 +194,7 @@ class PianoPuzzle(Puzzle):
         rhythm_color = Color(rgba=(0, .5, .5, 1))
         for i in range(len(durations)): #rhythm
             self.grid.get_tile((i+3, 2)).set_color(rhythm_color)
-
+        duration = self.user_notes[0].get_dur()
         self.rhythm_block = MovingBlock(
             size,
             self.grid.grid_to_pixel((durations.index(duration)+3, 2)),
@@ -175,11 +217,14 @@ class PianoPuzzle(Puzzle):
             self.on_key_change,
         )
         self.objects[(key_names.index(self.user_key)+1, 5)] = self.key_block
-
-
         self.objects[(8, 4)] = DoorTile(
             size, self.grid.grid_to_pixel((8, 4)), self.center_room
         )
+
+        
+
+    def place_objects(self):
+        self.create_objects()
 
         self.add(PushMatrix())
         self.add(Translate(*self.grid.pos))
@@ -225,6 +270,9 @@ class PianoPuzzle(Puzzle):
                 self.character.move_player(new_location)
             if self.character.grid_pos in self.objects:
                 if isinstance(self.objects[self.character.grid_pos], DoorTile):
+                    if not isinstance(self.objects[self.character.grid_pos].other_room, Puzzle):
+                        #instantiate class when we enter the door
+                        self.objects[self.character.grid_pos].other_room = self.objects[self.character.grid_pos].other_room(self, self.level+1)
                     return self.objects[self.character.grid_pos].other_room
         if button == Button.MINUS:
             self.play(actual=True)
@@ -238,6 +286,15 @@ class PianoPuzzle(Puzzle):
         self.key_label.set_text(f"Key: {self.user_key}")
         if not self.game_over and self.is_game_over():
             self.on_game_over()
+            if self.level < 3:
+                size = (self.grid.tile_side_len, self.grid.tile_side_len)
+                self.objects[(0, 4)] = DoorTile(
+                    size, self.grid.grid_to_pixel((0, 4)), PianoPuzzle
+                )
+                self.add(PushMatrix())
+                self.add(Translate(*self.grid.pos))
+                self.add(self.objects[(0, 4)])
+                self.add(PopMatrix())
 
     def on_layout(self, win_size):
         self.remove(self.character)

@@ -65,6 +65,7 @@ class DoorTile(Tile):
         super().__init__(size, pos)
         self.set_color(color=Color(rgba=(0, 0, 0, 1)))
         self.other_room = other_room
+        self.moveable = False
 
 
 class PyramidTile(Tile):
