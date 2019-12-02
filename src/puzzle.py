@@ -31,12 +31,13 @@ class Puzzle(InstructionGroup):
 
         if pos in self.objects and not self.objects[pos].passable:
             return False
-
         return True
 
     def get_tile(self, pos):
         assert self.is_valid_pos(pos)
         return self.grid.get_tile(pos)
+
+
 
     def create_game_over_text(self, win_size):
         self.game_over_window_color = Color(rgba=(1, 1, 1, 1))
