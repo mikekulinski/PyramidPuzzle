@@ -58,4 +58,4 @@ class MainWidget(BaseWidget):
 
 
 if __name__ == "__main__":
-    run(MainWidget)#, fullscreen=True)
+    run(MainWidget, fullscreen=True)

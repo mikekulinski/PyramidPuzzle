@@ -13,10 +13,7 @@ from src.grid import Tile, DoorTile, Grid
 from src.puzzle_sound import Note, PuzzleSound
 from src.character import Character
 from src.puzzle import Puzzle
-<<<<<<< HEAD
-=======
 from src.puzzle_sound import Note, PuzzleSound
->>>>>>> bass
 
 
 
