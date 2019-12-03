@@ -113,9 +113,7 @@ class CenterRoom(Puzzle):
                     if not isinstance(obj.other_room, Puzzle):
                         # instantiate class when we enter the door
                         self.objects[player_pos].other_room = obj.other_room(
-                            prev_room=self,
-                            level=0,
-                            on_finished_puzzle=self.on_finished_puzzle,
+                            prev_room=self, on_finished_puzzle=self.on_finished_puzzle
                         )
                     return self.objects[player_pos].other_room
 
