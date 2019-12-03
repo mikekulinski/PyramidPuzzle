@@ -65,9 +65,10 @@ class Mummy(Tile):
 
 
 class GuitarPuzzle(Puzzle):
-    def __init__(self, center_room):
+    def __init__(self, center_room, on_finished_puzzle):
         super().__init__()
         self.center_room = center_room
+        self.on_finished_puzzle = on_finished_puzzle
 
         self.puzzle_on = False
         self.note_index = 1
@@ -106,7 +107,7 @@ class GuitarPuzzle(Puzzle):
 
     def play_game(self, idx=None):
         if not self.game_over and self.is_game_over():
-            self.center_room.on_finished_puzzle()
+            self.on_finished_puzzle()
             self.on_game_over()
 
         if self.game_over:

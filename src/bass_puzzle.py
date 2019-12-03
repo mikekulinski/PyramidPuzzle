@@ -17,9 +17,10 @@ from src.puzzle_sound import Note, PuzzleSound
 
 
 class BassPuzzle(Puzzle):
-    def __init__(self, center_room):
+    def __init__(self, center_room, on_finished_puzzle):
         super().__init__()
         self.center_room = center_room
+        self.on_finished_puzzle = on_finished_puzzle
         self.fret_positions = [(1, 4), (1, 5), (1, 6), (1, 7)]
         self.correct_blocks = [1, 2, 3, 4]
         self.winning = {}  # stringidx : [fret in pos, string played]

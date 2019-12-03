@@ -13,10 +13,10 @@ from src.puzzle import Puzzle
 # map a 4 x 4 grid x axis is beat and y axis is instrument (hi-hat, bass drum, etc.)
 # no concept of actual sound
 levels = {
-        0: [" X  ", "XXX ", " X  ", "    "],
-        1: ["XX  ", "X  X", "  XX", "   X"],
-        2: ["  XX", " X  ", "X  X", "X XX"],
-        3: ["X  X", " XX ", "XX  ", "  X "],
+    0: [" X  ", "XXX ", " X  ", "    "],
+    1: ["XX  ", "X  X", "  XX", "   X"],
+    2: ["  XX", " X  ", "X  X", "X XX"],
+    3: ["X  X", " XX ", "XX  ", "  X "],
 }
 
 # hi-hat, snare, bass drum, tambourine
@@ -28,10 +28,11 @@ all_rests = [[Note(480, 0) for i in instruments] for _ in range(8)]
 
 
 class DrumsPuzzle(Puzzle):
-    def __init__(self, center_room, level=0):
+    def __init__(self, center_room, level=0, on_finished_puzzle=None):
         super().__init__()
         self.center_room = center_room
         self.level = level
+        self.on_finished_puzzle = on_finished_puzzle
         self.pattern = levels[level]
         self.drum_graphics = DrumPatternGraphics(self.pattern)
         self.add(self.drum_graphics)
@@ -43,7 +44,9 @@ class DrumsPuzzle(Puzzle):
 
     def on_button_press(self):
         self.objects[self.character.grid_pos].on_button_press()
-        self.objects[self.character.grid_pos].toggle_neighbors(self.objects, len(self.pattern))
+        self.objects[self.character.grid_pos].toggle_neighbors(
+            self.objects, len(self.pattern)
+        )
         self.sound.set_notes(self.beats)
         self.sound.toggle()
 
@@ -61,12 +64,10 @@ class DrumsPuzzle(Puzzle):
     def create_objects(self):
         self.objects = {}
         size = (self.grid.tile_side_len, self.grid.tile_side_len)
-        self.objects[(4, 0)] = DoorTile(
-            size, self.grid.grid_to_pixel((4, 0)), self.center_room
+        self.objects[(4, 8)] = DoorTile(
+            size, self.grid.grid_to_pixel((4, 8)), self.center_room
         )
-        self.objects[(6, 6)] = ResetButton(
-            size, self.grid.grid_to_pixel((6, 6))
-        )
+        self.objects[(6, 6)] = ResetButton(size, self.grid.grid_to_pixel((6, 6)))
         x_topleft, y_topleft = (2, 5)
 
         self.sequencer_tiles = []
@@ -108,9 +109,13 @@ class DrumsPuzzle(Puzzle):
             self.character.move_player(new_location)
             if self.character.grid_pos in self.objects:
                 if isinstance(self.objects[self.character.grid_pos], DoorTile):
-                    if not isinstance(self.objects[self.character.grid_pos].other_room, Puzzle):
-                        #instantiate class when we enter the door
-                        self.objects[self.character.grid_pos].other_room = self.objects[self.character.grid_pos].other_room(self, self.level+1)
+                    if not isinstance(
+                        self.objects[self.character.grid_pos].other_room, Puzzle
+                    ):
+                        # instantiate class when we enter the door
+                        self.objects[self.character.grid_pos].other_room = self.objects[
+                            self.character.grid_pos
+                        ].other_room(self, self.level + 1, self.on_finished_puzzle)
                     return self.objects[self.character.grid_pos].other_room
         elif button == Button.A:
             if self.character.grid_pos in self.objects:
@@ -127,16 +132,18 @@ class DrumsPuzzle(Puzzle):
         self.sound.on_update()
         if self.sequencer_tiles:
             if not self.game_over and self.is_game_over():
-                self.center_room.on_finished_puzzle()
-                self.on_game_over()
+                if self.level == max(levels.keys()):
+                    self.on_finished_puzzle()
+                    self.on_game_over()
+
                 if self.level < 3:
                     size = (self.grid.tile_side_len, self.grid.tile_side_len)
-                    self.objects[(4, 8)] = DoorTile(
-                        size, self.grid.grid_to_pixel((4, 8)), DrumsPuzzle
+                    self.objects[(4, 0)] = DoorTile(
+                        size, self.grid.grid_to_pixel((4, 0)), DrumsPuzzle
                     )
                     self.add(PushMatrix())
                     self.add(Translate(*self.grid.pos))
-                    self.add(self.objects[(4, 8)])
+                    self.add(self.objects[(4, 0)])
                     self.add(PopMatrix())
 
     def on_layout(self, win_size):
@@ -262,12 +269,10 @@ class SequencerTile(Tile):
             if coord in objects:
                 objects[coord].toggle()
 
+
 class ResetButton(Tile):
     def __init__(self, size, pos):
         super().__init__(size, pos)
 
-        self.set_color(color=Tile.base_color, source='./data/reset_button.jpg')
-
-
-
+        self.set_color(color=Tile.base_color, source="./data/reset_button.jpg")
 

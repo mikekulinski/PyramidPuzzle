@@ -111,7 +111,7 @@ class CenterRoom(Puzzle):
                     ):
                         self.objects[self.character.grid_pos].other_room = self.objects[
                             self.character.grid_pos
-                        ].other_room(self)
+                        ].other_room(self, on_finished_puzzle=self.on_finished_puzzle)
                     return self.objects[self.character.grid_pos].other_room
 
     def on_update(self):
