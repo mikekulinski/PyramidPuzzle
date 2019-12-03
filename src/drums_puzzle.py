@@ -28,9 +28,9 @@ all_rests = [[Note(480, 0) for i in instruments] for _ in range(8)]
 
 
 class DrumsPuzzle(Puzzle):
-    def __init__(self, center_room, level=0, on_finished_puzzle=None):
+    def __init__(self, prev_room, level=0, on_finished_puzzle=None):
         super().__init__()
-        self.center_room = center_room
+        self.prev_room = prev_room
         self.level = level
         self.on_finished_puzzle = on_finished_puzzle
         self.pattern = levels[level]
@@ -65,7 +65,7 @@ class DrumsPuzzle(Puzzle):
         self.objects = {}
         size = (self.grid.tile_side_len, self.grid.tile_side_len)
         self.objects[(4, 8)] = DoorTile(
-            size, self.grid.grid_to_pixel((4, 8)), self.center_room
+            size, self.grid.grid_to_pixel((4, 8)), self.prev_room
         )
         self.objects[(6, 6)] = ResetButton(size, self.grid.grid_to_pixel((6, 6)))
         x_topleft, y_topleft = (2, 5)
@@ -101,27 +101,33 @@ class DrumsPuzzle(Puzzle):
         self.add(PopMatrix())
 
     def on_player_input(self, button):
+        player_pos = self.character.grid_pos
         if button in [Button.UP, Button.DOWN, Button.LEFT, Button.RIGHT]:
+            # Move the player
             x, y = button.value
-            cur_location = self.character.grid_pos
-            new_location = (cur_location[0] + x, cur_location[1] + y)
+            new_pos = (player_pos[0] + x, player_pos[1] + y)
             self.character.change_direction(button.value)
-            self.character.move_player(new_location)
-            if self.character.grid_pos in self.objects:
-                if isinstance(self.objects[self.character.grid_pos], DoorTile):
-                    if not isinstance(
-                        self.objects[self.character.grid_pos].other_room, Puzzle
-                    ):
+            self.character.move_player(new_pos)
+            player_pos = self.character.grid_pos
+
+            # Check if we are walking through a door
+            if player_pos in self.objects:
+                obj = self.objects[player_pos]
+                if isinstance(obj, DoorTile):
+                    if not isinstance(obj.other_room, Puzzle):
                         # instantiate class when we enter the door
-                        self.objects[self.character.grid_pos].other_room = self.objects[
-                            self.character.grid_pos
-                        ].other_room(self, self.level + 1, self.on_finished_puzzle)
-                    return self.objects[self.character.grid_pos].other_room
+                        self.objects[player_pos].other_room = obj.other_room(
+                            prev_room=self,
+                            level=self.level + 1,
+                            on_finished_puzzle=self.on_finished_puzzle,
+                        )
+                    return self.objects[player_pos].other_room
         elif button == Button.A:
-            if self.character.grid_pos in self.objects:
-                if isinstance(self.objects[self.character.grid_pos], SequencerTile):
+            if player_pos in self.objects:
+                obj = self.objects[player_pos]
+                if isinstance(obj, SequencerTile):
                     self.on_button_press()
-                if isinstance(self.objects[self.character.grid_pos], ResetButton):
+                if isinstance(obj, ResetButton):
                     for row in self.sequencer_tiles:
                         for tile in row:
                             tile.turn_off()

@@ -92,9 +92,9 @@ keys = {
 
 
 class PianoPuzzle(Puzzle):
-    def __init__(self, center_room, level=0, on_finished_puzzle=None):
+    def __init__(self, prev_room, level=0, on_finished_puzzle=None):
         super().__init__()
-        self.center_room = center_room
+        self.prev_room = prev_room
         self.on_finished_puzzle = on_finished_puzzle
         self.animations = AnimGroup()
         self.level = level
@@ -222,7 +222,7 @@ class PianoPuzzle(Puzzle):
         )
         self.objects[(key_names.index(self.user_key) + 1, 5)] = self.key_block
         self.objects[(8, 4)] = DoorTile(
-            size, self.grid.grid_to_pixel((8, 4)), self.center_room
+            size, self.grid.grid_to_pixel((8, 4)), self.prev_room
         )
 
     def place_objects(self):

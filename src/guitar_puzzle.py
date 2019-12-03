@@ -65,9 +65,10 @@ class Mummy(Tile):
 
 
 class GuitarPuzzle(Puzzle):
-    def __init__(self, center_room, on_finished_puzzle):
+    def __init__(self, prev_room=None, level=0, on_finished_puzzle=None):
         super().__init__()
-        self.center_room = center_room
+        self.prev_room = prev_room
+        self.level = level
         self.on_finished_puzzle = on_finished_puzzle
 
         self.puzzle_on = False
@@ -167,7 +168,7 @@ class GuitarPuzzle(Puzzle):
         # Add door to switch between rooms
         size = (self.grid.tile_side_len, self.grid.tile_side_len)
         self.objects[(0, 4)] = DoorTile(
-            size, self.grid.grid_to_pixel((0, 4)), self.center_room
+            size, self.grid.grid_to_pixel((0, 4)), self.prev_room
         )
 
         self.mummy = self.create_mummy((4, 8))
