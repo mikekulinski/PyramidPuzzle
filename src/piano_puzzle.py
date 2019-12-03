@@ -13,7 +13,7 @@ from kivy.graphics import (
 from kivy.graphics.instructions import InstructionGroup
 
 from src.button import Button
-from common.gfxutil import AnimGroup, CLabelRect, KFAnim
+from common.gfxutil import AnimGroup, CLabelRect, KFAnim, CRectangle
 from src.grid import DoorTile, Switch, Tile
 from src.puzzle_sound import Note, PuzzleSound
 
@@ -121,6 +121,9 @@ class PianoPuzzle(Puzzle):
         )
         self.add(Color(rgba=(1, 1, 1, 1)))
         self.add(self.key_label)
+        self.create_instructions((Window.width, Window.height))
+        self.add(self.instructions_text_color)
+        self.add(self.instructions_text)
 
     def play(self, actual=False):
         if actual:
@@ -130,6 +133,12 @@ class PianoPuzzle(Puzzle):
         else:
             self.user_sound.set_cb_ons([self.music_bar.play])
             self.user_sound.toggle()
+
+    def create_instructions(self, win_size):
+        self.instructions_text_color = Color(rgba=(1, 1, 1, 1))
+        self.instructions_text = CLabelRect(
+            (win_size[0] // 8, win_size[1]*4/7), "Press + to hear your note sequence.\nPress - to hear the sequence\nyou are trying to match.", 20
+        )
 
     def on_pitch_change(self, pitch_index):
         offset = 1 if self.character.direction == Button.RIGHT.value else -1
@@ -305,12 +314,12 @@ class PianoPuzzle(Puzzle):
             if self.level == max(levels.keys()):
                 self.on_finished_puzzle()
                 self.on_game_over()
-
-            if self.level < 3:
-                size = (self.grid.tile_side_len, self.grid.tile_side_len)
-                self.objects[(0, 4)] = DoorTile(
-                    size, self.grid.grid_to_pixel((0, 4)), PianoPuzzle
-                )
+            else:
+                if (0,4) not in self.objects:
+                    size = (self.grid.tile_side_len, self.grid.tile_side_len)
+                    self.objects[(0, 4)] = DoorTile(
+                        size, self.grid.grid_to_pixel((0, 4)), PianoPuzzle
+                    )
                 self.add(PushMatrix())
                 self.add(Translate(*self.grid.pos))
                 self.add(self.objects[(0, 4)])
@@ -319,6 +328,8 @@ class PianoPuzzle(Puzzle):
     def on_layout(self, win_size):
         self.remove(self.character)
         self.remove(self.grid)
+        self.remove(self.instructions_text_color)
+        self.remove(self.instructions_text)
         self.grid.on_layout((win_size[0], 0.75 * win_size[1]))
         for pos, obj in self.objects.items():
             self.remove(obj)
@@ -335,6 +346,10 @@ class PianoPuzzle(Puzzle):
         )
         self.add(Color(rgba=(1, 1, 1, 1)))
         self.add(self.key_label)
+
+        self.create_instructions(win_size)
+        self.add(self.instructions_text_color)
+        self.add(self.instructions_text)
 
         self.create_game_over_text(win_size)
         if self.game_over:
