@@ -41,15 +41,16 @@ class GuitarPuzzle(Puzzle):
         self.notes = [Note(480, p) for p in (60, 64, 67, 72, 74)]
         self.audio = PuzzleSound(self.notes, simon_says=True)
 
+        self.tile_size = (self.grid.tile_side_len, self.grid.tile_side_len)
+
         self.place_objects()
 
     def create_mummy(self, pos):
-        size = (self.grid.tile_side_len, self.grid.tile_side_len)
         pos = self.grid.grid_to_pixel(pos)
-        return Mummy(size, pos, self.on_interact_mummy, "./data/mummy.jpg")
+        return Mummy(self.tile_size, pos, self.on_interact_mummy, "./data/mummy.jpg")
 
     def create_simon_says(self, pos, idx):
-        size = (self.grid.tile_side_len * 0.75, self.grid.tile_side_len * 0.75)
+        size = (self.tile_size[0] * 0.75, self.tile_size[1] * 0.75)
         pos = self.grid.grid_to_pixel(pos)
         pos = (
             pos[0] + self.grid.tile_side_len // 2,
@@ -114,9 +115,8 @@ class GuitarPuzzle(Puzzle):
     def place_objects(self):
         self.objects = {}
         # Add door to switch between rooms
-        size = (self.grid.tile_side_len, self.grid.tile_side_len)
         self.objects[(0, 4)] = DoorTile(
-            size, self.grid.grid_to_pixel((0, 4)), self.prev_room
+            self.tile_size, self.grid.grid_to_pixel((0, 4)), self.prev_room
         )
 
         self.mummy = self.create_mummy((4, 8))
@@ -172,11 +172,10 @@ class GuitarPuzzle(Puzzle):
                 self.on_finished_puzzle()
                 self.on_game_over()
             else:
-                self.game_over = True
-                size = (self.grid.tile_side_len, self.grid.tile_side_len)
-                self.objects[(8, 4)] = DoorTile(
-                    size, self.grid.grid_to_pixel((8, 4)), GuitarPuzzle
-                )
+                if (8, 4) not in self.objects:
+                    self.objects[(8, 4)] = DoorTile(
+                        self.tile_size, self.grid.grid_to_pixel((8, 4)), GuitarPuzzle
+                    )
                 self.add(PushMatrix())
                 self.add(Translate(*self.grid.pos))
                 self.add(self.objects[(8, 4)])
@@ -190,6 +189,7 @@ class GuitarPuzzle(Puzzle):
 
         self.grid.on_layout(win_size)
         self.add(self.grid)
+        self.tile_size = (self.grid.tile_side_len, self.grid.tile_side_len)
 
         self.place_objects()
 
@@ -230,7 +230,7 @@ class SimonSays(InstructionGroup):
     def set_color(self, color):
         self.remove(self.rect)
 
-        self.current_color = Color(rgba=color.rgba)
+        self.current_color = Color(rgba=(*color.rgba,))
         self.rect = CRectangle(csize=self.size, cpos=self.pos)
         self.add(self.current_color)
         self.add(self.rect)
