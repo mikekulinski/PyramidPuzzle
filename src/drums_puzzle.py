@@ -238,6 +238,7 @@ class SequencerTile(Tile):
     def turn_off(self):
         self.set_beats(rest=True)
         self.set_color(color=SequencerTile.inactive_color)
+        self.beat_on = False
 
     def set_beats(self, rest=True):
         for i in range(len(self.beats)):
