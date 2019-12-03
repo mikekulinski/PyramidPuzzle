@@ -64,6 +64,9 @@ class DrumsPuzzle(Puzzle):
         self.objects[(4, 0)] = DoorTile(
             size, self.grid.grid_to_pixel((4, 0)), self.center_room
         )
+        self.objects[(6, 6)] = ResetButton(
+            size, self.grid.grid_to_pixel((6, 6))
+        )
         x_topleft, y_topleft = (2, 5)
 
         self.sequencer_tiles = []
@@ -113,6 +116,10 @@ class DrumsPuzzle(Puzzle):
             if self.character.grid_pos in self.objects:
                 if isinstance(self.objects[self.character.grid_pos], SequencerTile):
                     self.on_button_press()
+                if isinstance(self.objects[self.character.grid_pos], ResetButton):
+                    for row in self.sequencer_tiles:
+                        for tile in row:
+                            tile.turn_off()
         elif button == Button.B:
             self.sound.toggle()
 
@@ -228,6 +235,10 @@ class SequencerTile(Tile):
             self.set_color(SequencerTile.active_color)
         self.beat_on = not self.beat_on
 
+    def turn_off(self):
+        self.set_beats(rest=True)
+        self.set_color(color=SequencerTile.inactive_color)
+
     def set_beats(self, rest=True):
         for i in range(len(self.beats)):
             for j in range(len(self.beats)):
@@ -249,3 +260,13 @@ class SequencerTile(Tile):
         for coord in coords:
             if coord in objects:
                 objects[coord].toggle()
+
+class ResetButton(Tile):
+    def __init__(self, size, pos):
+        super().__init__(size, pos)
+
+        self.set_color(color=Tile.base_color, source='./data/reset_button.jpg')
+
+
+
+
