@@ -12,9 +12,12 @@ from src.puzzle import Puzzle
 # make audio loop so notes change in real time
 # map a 4 x 4 grid x axis is beat and y axis is instrument (hi-hat, bass drum, etc.)
 # no concept of actual sound
-
-pattern = ["X  X", " XX ", "XX  ", "  X "]
-
+levels = {
+        0: [" X  ", "XXX ", " X  ", "    "],
+        1: ["XX  ", "X  X", "  XX", "   X"],
+        2: ["  XX", " X  ", "X  X", "X XX"],
+        3: ["X  X", " XX ", "XX  ", "  X "],
+}
 
 # hi-hat, snare, bass drum, tambourine
 instruments = [42, 38, 36, 54]
@@ -25,41 +28,44 @@ all_rests = [[Note(480, 0) for i in instruments] for _ in range(8)]
 
 
 class DrumsPuzzle(Puzzle):
-    def __init__(self, center_room):
+    def __init__(self, center_room, level=0):
         super().__init__()
         self.center_room = center_room
-        self.drum_graphics = DrumPatternGraphics(pattern)
+        self.level = level
+        self.pattern = levels[level]
+        self.drum_graphics = DrumPatternGraphics(self.pattern)
         self.add(self.drum_graphics)
 
         self.beats = all_rests
         self.sound = PuzzleSound(self.beats, bank=128, loop=True)
-
+        self.create_objects()
         self.place_objects()
-
-        self.sequencer_tiles = []
 
     def on_button_press(self):
         self.objects[self.character.grid_pos].on_button_press()
-        self.objects[self.character.grid_pos].toggle_neighbors(self.objects, 4)
+        self.objects[self.character.grid_pos].toggle_neighbors(self.objects, len(self.pattern))
         self.sound.set_notes(self.beats)
         self.sound.toggle()
 
     """ Mandatory Puzzle methods """
 
     def is_game_over(self):
-        for i in range(len(pattern)):
-            for j in range(len(pattern[i])):
-                if pattern[i][j] == "X" and not self.sequencer_tiles[i][j].beat_on:
+        for i in range(len(self.pattern)):
+            for j in range(len(self.pattern[i])):
+                if self.pattern[i][j] == "X" and not self.sequencer_tiles[i][j].beat_on:
                     return False
-                if pattern[i][j] == " " and self.sequencer_tiles[i][j].beat_on:
+                if self.pattern[i][j] == " " and self.sequencer_tiles[i][j].beat_on:
                     return False
         return True
 
-    def place_objects(self):
+    def create_objects(self):
         self.objects = {}
         size = (self.grid.tile_side_len, self.grid.tile_side_len)
         self.objects[(4, 0)] = DoorTile(
             size, self.grid.grid_to_pixel((4, 0)), self.center_room
+        )
+        self.objects[(6, 6)] = ResetButton(
+            size, self.grid.grid_to_pixel((6, 6))
         )
         x_topleft, y_topleft = (2, 5)
 
@@ -83,6 +89,8 @@ class DrumsPuzzle(Puzzle):
                 row.append(tile)
             self.sequencer_tiles.append(row)
 
+    def place_objects(self):
+
         self.add(PushMatrix())
         self.add(Translate(*self.grid.pos))
 
@@ -100,11 +108,18 @@ class DrumsPuzzle(Puzzle):
             self.character.move_player(new_location)
             if self.character.grid_pos in self.objects:
                 if isinstance(self.objects[self.character.grid_pos], DoorTile):
+                    if not isinstance(self.objects[self.character.grid_pos].other_room, Puzzle):
+                        #instantiate class when we enter the door
+                        self.objects[self.character.grid_pos].other_room = self.objects[self.character.grid_pos].other_room(self, self.level+1)
                     return self.objects[self.character.grid_pos].other_room
         elif button == Button.A:
             if self.character.grid_pos in self.objects:
                 if isinstance(self.objects[self.character.grid_pos], SequencerTile):
                     self.on_button_press()
+                if isinstance(self.objects[self.character.grid_pos], ResetButton):
+                    for row in self.sequencer_tiles:
+                        for tile in row:
+                            tile.turn_off()
         elif button == Button.B:
             self.sound.toggle()
 
@@ -114,6 +129,15 @@ class DrumsPuzzle(Puzzle):
             if not self.game_over and self.is_game_over():
                 self.center_room.on_finished_puzzle()
                 self.on_game_over()
+                if self.level < 3:
+                    size = (self.grid.tile_side_len, self.grid.tile_side_len)
+                    self.objects[(4, 8)] = DoorTile(
+                        size, self.grid.grid_to_pixel((4, 8)), DrumsPuzzle
+                    )
+                    self.add(PushMatrix())
+                    self.add(Translate(*self.grid.pos))
+                    self.add(self.objects[(4, 8)])
+                    self.add(PopMatrix())
 
     def on_layout(self, win_size):
         self.remove(self.character)
@@ -159,9 +183,9 @@ class DrumPatternGraphics(InstructionGroup):
             self.grid.cpos[1] + size / 2 - square_size / 2,
         )
         self.add(self.grid)
-        for i in range(len(pattern)):
-            for j in range(len(pattern[i])):
-                if pattern[i][j] == "X":
+        for i in range(len(self.pattern)):
+            for j in range(len(self.pattern[i])):
+                if self.pattern[i][j] == "X":
                     sq = CRectangle(
                         cpos=(
                             top_left[0] + j * square_size,
@@ -212,6 +236,10 @@ class SequencerTile(Tile):
             self.set_color(SequencerTile.active_color)
         self.beat_on = not self.beat_on
 
+    def turn_off(self):
+        self.set_beats(rest=True)
+        self.set_color(color=SequencerTile.inactive_color)
+
     def set_beats(self, rest=True):
         for i in range(len(self.beats)):
             for j in range(len(self.beats)):
@@ -233,3 +261,13 @@ class SequencerTile(Tile):
         for coord in coords:
             if coord in objects:
                 objects[coord].toggle()
+
+class ResetButton(Tile):
+    def __init__(self, size, pos):
+        super().__init__(size, pos)
+
+        self.set_color(color=Tile.base_color, source='./data/reset_button.jpg')
+
+
+
+

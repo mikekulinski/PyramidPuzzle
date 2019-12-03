@@ -6,6 +6,7 @@ from src.grid import DoorTile, Tile
 from src.guitar_puzzle import GuitarPuzzle
 from src.piano_puzzle import PianoPuzzle
 from src.puzzle import Puzzle
+from src.bass_puzzle import BassPuzzle
 
 
 class CenterRoom(Puzzle):
@@ -18,6 +19,7 @@ class CenterRoom(Puzzle):
 
         self.last_entered = (0, 0)
 
+        self.create_objects()
         self.place_objects()
 
     def on_finished_puzzle(self):
@@ -34,6 +36,7 @@ class CenterRoom(Puzzle):
 
         for pos, obj in self.objects.items():
             self.remove(obj)
+        self.create_objects()
         self.place_objects()
 
         self.character.move_player((4, 4))
@@ -43,7 +46,7 @@ class CenterRoom(Puzzle):
     def is_game_over(self):
         return self.up and self.down and self.left and self.right
 
-    def place_objects(self):
+    def create_objects(self):
         self.objects = {}
 
         size = (self.grid.tile_side_len, self.grid.tile_side_len)
@@ -68,11 +71,11 @@ class CenterRoom(Puzzle):
 
         if self.up:
             self.objects[(4, 8)] = Tile(size, self.grid.grid_to_pixel((4, 8)))
-            self.objects[(4, 8)].set_color(Tile.base_color, source="./data/drums.png")
+            self.objects[(4, 8)].set_color(Tile.base_color, source="./data/bass.png")
             self.objects[(4, 8)].passable = False
         else:
             self.objects[(4, 8)] = DoorTile(
-                size, self.grid.grid_to_pixel((4, 8)), DrumsPuzzle
+                size, self.grid.grid_to_pixel((4, 8)), BassPuzzle
             )
 
         if self.down:
@@ -84,6 +87,7 @@ class CenterRoom(Puzzle):
                 size, self.grid.grid_to_pixel((4, 0)), DrumsPuzzle
             )
 
+    def place_objects(self):
         self.add(PushMatrix())
         self.add(Translate(*self.grid.pos))
 
@@ -102,7 +106,13 @@ class CenterRoom(Puzzle):
             if self.character.grid_pos in self.objects:
                 if isinstance(self.objects[self.character.grid_pos], DoorTile):
                     self.last_entered = self.character.grid_pos
-                    return self.objects[self.character.grid_pos].other_room(self)
+                    if not isinstance(
+                        self.objects[self.character.grid_pos].other_room, Puzzle
+                    ):
+                        self.objects[self.character.grid_pos].other_room = self.objects[
+                            self.character.grid_pos
+                        ].other_room(self)
+                    return self.objects[self.character.grid_pos].other_room
 
     def on_update(self):
         if not self.game_over and self.is_game_over():

@@ -14,7 +14,7 @@ class SimonSays(InstructionGroup):
         super().__init__()
         self.size = size
         self.pos = pos
-
+        self.moveable = False
         self.passable = False
         self.unactive_color = Color(rgba=(*color.rgb, 1 / 3))
         self.active_color = Color(rgba=(*color.rgb, 1))
