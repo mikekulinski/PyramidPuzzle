@@ -4,7 +4,7 @@ from kivy.graphics.instructions import InstructionGroup
 
 
 class Tile(InstructionGroup):
-    border_color = Color(rgba=(0.6, 0.3, 0, 1))
+    border_color = Color(rgba=(0.6, 0.3, 0, 0))
     base_color = Color(rgba=(1, 0.9, 0.8, 1))
 
     def __init__(self, size, pos):
@@ -117,6 +117,7 @@ class Grid(InstructionGroup):
                     size=(self.tile_side_len, self.tile_side_len),
                     pos=(c * self.tile_side_len, r * self.tile_side_len),
                 )
+                tile.set_color(Color(1,1,1), source="./data/tile2.png")
 
                 self.tiles[r].append(tile)
                 self.add(tile)
