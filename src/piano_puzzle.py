@@ -221,7 +221,7 @@ class PianoPuzzle(Puzzle):
             size,
             self.grid.grid_to_pixel((4, 7)),
             ((1, 7), (8, 7)),
-            "./data/pitch_icon.png",
+            "./data/pitch_slider.png",
             self.on_pitch_change,
         )
 
@@ -231,7 +231,7 @@ class PianoPuzzle(Puzzle):
             size,
             self.grid.grid_to_pixel((durations.index(duration) + 3, 2)),
             ((3, 2), (7, 2)),
-            "./data/rhythm_icon.png",
+            "./data/rhythm_slider.png",
             self.on_duration_change,
         )
 
@@ -240,7 +240,7 @@ class PianoPuzzle(Puzzle):
             size,
             self.grid.grid_to_pixel((key_names.index(self.user_key) + 1, 5)),
             ((1, 5), (7, 5)),
-            "./data/key_icon.jpeg",
+            "./data/key_slider.png",
             self.on_key_change,
         )
         self.objects[(9, 4)] = DoorTile(
@@ -583,7 +583,7 @@ class MovingBlock(Tile):
         self.moveable = True
         self.callback = callback
 
-        self.set_color(color=MovingBlock.color, source=self.icon_source)
+        self.set_color(color=Tile.base_color, source=self.icon_source)
 
     def on_block_placement(self, pos):
         idx = pos[0] - self.move_range[0][0]
