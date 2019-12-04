@@ -108,7 +108,8 @@ class BassPuzzle(Puzzle):
         return FretBlock(self.tile_size, grid_loc, pos, string_idx)
 
     def create_play_button(self, grid_loc):
-        pos = self.grid.grid_to_pixel(grid_loc)
+        wall_location = (grid_loc[0] - 1, grid_loc[1])
+        pos = self.grid.grid_to_pixel(wall_location)
         return PlayButton(self.tile_size, pos)
 
     def place_objects(self):

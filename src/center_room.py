@@ -28,6 +28,13 @@ class CenterRoom(Puzzle):
             (9, 4): False,  # RIGHT
         }
 
+        # self.puzzle_finished = {
+        #     (4, 9): True,  # UP
+        #     (4, -1): True,  # DOWN
+        #     (-1, 4): True,  # LEFT
+        #     (9, 4): True,  # RIGHT
+        # }
+
         self.icon_sources = {
             (4, 9): "./data/bass.png",  # UP
             (4, -1): "./data/drums.png",  # DOWN
