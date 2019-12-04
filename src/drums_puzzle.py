@@ -146,10 +146,11 @@ class DrumsPuzzle(Puzzle):
                     self.on_finished_puzzle()
                     self.on_game_over()
                 else:
-                    size = (self.grid.tile_side_len, self.grid.tile_side_len)
-                    self.objects[(4, 0)] = DoorTile(
-                        size, self.grid.grid_to_pixel((4, 0)), DrumsPuzzle
-                    )
+                    if (4,0) not in self.objects:
+                        size = (self.grid.tile_side_len, self.grid.tile_side_len)
+                        self.objects[(4, 0)] = DoorTile(
+                            size, self.grid.grid_to_pixel((4, 0)), DrumsPuzzle
+                        )
                     self.add(PushMatrix())
                     self.add(Translate(*self.grid.pos))
                     self.add(self.objects[(4, 0)])
