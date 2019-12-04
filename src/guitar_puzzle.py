@@ -15,6 +15,8 @@ levels = {
     3: [4, 2, 0, 1, 3, 2, 4],
 }
 
+sources = ["./data/sarco.jpg", "./data/mummy.jpg", "./data/anubis.jpg", "./data/ra.png"]
+
 
 class GuitarPuzzle(Puzzle):
     def __init__(self, prev_room=None, level=0, on_finished_puzzle=None):
@@ -23,11 +25,11 @@ class GuitarPuzzle(Puzzle):
         self.level = level
         self.on_finished_puzzle = on_finished_puzzle
 
-        self.puzzle_on = False
         self.note_index = 1
         self.cpu_turn = True
         self.user_sequence = []
         self.correct_sequence = levels[level]
+        self.mummy_source = sources[level]
 
         self.colors = [
             Color(rgb=(0, 1, 0)),  # Green
@@ -47,7 +49,7 @@ class GuitarPuzzle(Puzzle):
 
     def create_mummy(self, pos):
         pos = self.grid.grid_to_pixel(pos)
-        return Mummy(self.tile_size, pos, self.on_interact_mummy, "./data/mummy.jpg")
+        return Mummy(self.tile_size, pos, self.on_interact_mummy, self.mummy_source)
 
     def create_simon_says(self, pos, idx):
         size = (self.tile_size[0] * 0.75, self.tile_size[1] * 0.75)
@@ -91,11 +93,7 @@ class GuitarPuzzle(Puzzle):
                 self.play_game()
 
     def on_interact_mummy(self):
-        self.puzzle_on = True
-        for pos, obj in self.objects.items():
-            self.remove(obj)
-        self.place_objects()
-
+        self.user_sequence = []
         self.note_index = 1
         self.cpu_turn = True
         self.play_game()
@@ -122,13 +120,12 @@ class GuitarPuzzle(Puzzle):
         self.mummy = self.create_mummy((4, 8))
         self.objects[(4, 8)] = self.mummy
 
-        if self.puzzle_on:
-            self.simons = []
-            for idx in range(5):
-                pos = (idx + 2, 4)
-                simon = self.create_simon_says(pos, idx)
-                self.simons.append(simon)
-                self.objects[pos] = simon
+        self.simons = []
+        for idx in range(5):
+            pos = (idx + 2, 4)
+            simon = self.create_simon_says(pos, idx)
+            self.simons.append(simon)
+            self.objects[pos] = simon
 
         self.add(PushMatrix())
         self.add(Translate(*self.grid.pos))
@@ -197,13 +194,6 @@ class GuitarPuzzle(Puzzle):
         self.add(self.character)
 
         self.create_game_over_text(win_size)
-        # if self.game_over:
-        #     self.remove(self.game_over_window_color)
-        #     self.remove(self.game_over_window)
-        #     self.remove(self.game_over_text_color)
-        #     self.remove(self.game_over_text)
-
-        #     self.on_game_over()
 
 
 class SimonSays(InstructionGroup):
