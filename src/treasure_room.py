@@ -1,4 +1,6 @@
 from kivy.graphics import PopMatrix, PushMatrix, Translate, Color
+from kivy.core.window import Window
+from common.gfxutil import CLabelRect, CRectangle
 
 from src.button import Button
 from src.grid import DoorTile, Tile
@@ -11,6 +13,7 @@ class TreasureRoom(Puzzle):
         self.create_objects()
         self.place_objects()
         self.blocks_placed = 0
+        self.create_treasure_popup((Window.width, Window.height))
 
     """ Mandatory Puzzle methods """
 
@@ -113,9 +116,34 @@ class TreasureRoom(Puzzle):
                         ].other_room(self, self.level + 1)
                     return self.objects[self.character.grid_pos].other_room
             if self.blocks_placed == 4:
-                self.get_tile((4, 4)).set_color(
-                    color=Tile.base_color, source="./data/treasure.png"
-                )
+                self.on_game_over()
+
+
+    def create_treasure_popup(self, win_size):
+        self.game_over_window_color = Color(rgba=(1, 1, 1, 1))
+        self.game_over_window = CRectangle(
+            cpos=(win_size[0] // 2, win_size[1] // 2),
+            csize=(win_size[0] // 2, win_size[1] // 5),
+        )
+        self.game_over_text_color = Color(rgba=(0, 0, 0, 1))
+        self.game_over_text = CLabelRect(
+            (win_size[0] // 2, win_size[1] // 2), "You unlocked the pharaoh's treasure!\nYou WIN!", 40
+        )
+        self.treasure = CRectangle(
+            cpos=(win_size[0] // 2, win_size[1] // 4),
+            csize=(win_size[0] // 4, win_size[1] // 4),
+            source='./data/treasure.png'
+        )
+
+    def on_game_over(self):
+        self.game_over = True
+        self.add(self.game_over_window_color)
+        self.add(self.game_over_window)
+        self.add(self.game_over_text_color)
+        self.add(self.game_over_text)
+        self.add(self.game_over_window_color)
+        self.add(self.treasure)
+
 
     def on_update(self):
         pass
@@ -131,6 +159,15 @@ class TreasureRoom(Puzzle):
         self.place_objects()
         self.character.on_layout(win_size)
         self.add(self.character)
+        self.create_treasure_popup(win_size)
+        if self.game_over:
+            self.remove(self.game_over_window_color)
+            self.remove(self.game_over_window)
+            self.remove(self.game_over_text_color)
+            self.remove(self.game_over_text)
+            self.remove(self.treasure)
+
+            self.on_game_over()
 
 
 class MovingBlock(Tile):
