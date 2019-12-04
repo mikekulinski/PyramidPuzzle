@@ -1,5 +1,6 @@
 # common imports
 import numpy as np
+from kivy.graphics import Color
 from kivy.graphics.instructions import InstructionGroup
 from kivy.graphics import Color
 from common.gfxutil import CRectangle
@@ -18,6 +19,7 @@ class Character(InstructionGroup):
             self.puzzle.grid.num_tiles // 2,
         )
         self.sprite = CRectangle()
+        self.add(Color(1, 1, 1))
         self.add(self.sprite)
         self.move_player(self.grid_pos)
 
@@ -37,7 +39,8 @@ class Character(InstructionGroup):
         self.sprite = CRectangle(
             cpos=self.pixel_pos, csize=self.size, source=self.source
         )
-        self.add(Color(1,1,1))
+
+        self.add(Color(1, 1, 1))
         self.add(self.sprite)
 
     def change_direction(self, direction):

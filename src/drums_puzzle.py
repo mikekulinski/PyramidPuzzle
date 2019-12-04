@@ -138,11 +138,10 @@ class DrumsPuzzle(Puzzle):
         self.sound.on_update()
         if self.sequencer_tiles:
             if not self.game_over and self.is_game_over():
-                if self.level == max(levels.keys()):
+                if self.level >= max(levels.keys()):
                     self.on_finished_puzzle()
                     self.on_game_over()
-
-                if self.level < 3:
+                else:
                     size = (self.grid.tile_side_len, self.grid.tile_side_len)
                     self.objects[(4, 0)] = DoorTile(
                         size, self.grid.grid_to_pixel((4, 0)), DrumsPuzzle

@@ -8,60 +8,14 @@ from src.puzzle_sound import Note, PuzzleSound
 
 from src.puzzle import Puzzle
 
+levels = {
+    0: [0, 1, 2, 3],
+    1: [2, 1, 4, 2, 0],
+    2: [3, 0, 0, 4, 2, 0],
+    3: [4, 2, 0, 1, 3, 2, 4],
+}
 
-class SimonSays(InstructionGroup):
-    def __init__(self, size, pos, color, idx, on_interact, puzzle):
-        super().__init__()
-        self.size = size
-        self.pos = pos
-        self.moveable = False
-        self.passable = False
-        self.unactive_color = Color(rgba=(*color.rgb, 1 / 3))
-        self.active_color = Color(rgba=(*color.rgb, 1))
-        self.active = False
-        self.idx = idx
-        self.on_interact = on_interact
-        self.puzzle = puzzle
-
-        self.current_color = Color(rgba=self.unactive_color.rgba)
-        self.rect = CRectangle(csize=self.size, cpos=self.pos)
-        self.add(self.current_color)
-        self.add(self.rect)
-
-        self.deactivate()
-
-    def set_color(self, color):
-        self.remove(self.rect)
-
-        self.current_color = Color(rgba=color.rgba)
-        self.rect = CRectangle(csize=self.size, cpos=self.pos)
-        self.add(self.current_color)
-        self.add(self.rect)
-
-    def interact(self):
-        self.on_interact(self.idx)
-
-    def activate(self):
-        self.set_color(color=self.active_color)
-
-    def deactivate(self):
-        self.set_color(color=self.unactive_color)
-
-    def on_finished_playing(self):
-        self.puzzle.play_game(self.idx)
-
-
-class Mummy(Tile):
-    def __init__(self, size, pos, on_interact, icon_source):
-        super().__init__(size, pos)
-        self.on_interact = on_interact
-        self.icon_source = icon_source
-        self.passable = False
-
-        self.set_color(color=Tile.base_color, source=self.icon_source)
-
-    def interact(self):
-        self.on_interact()
+sources = ["./data/sarco.jpg", "./data/mummy.jpg", "./data/anubis.jpg", "./data/ra.png"]
 
 
 class GuitarPuzzle(Puzzle):
@@ -71,11 +25,11 @@ class GuitarPuzzle(Puzzle):
         self.level = level
         self.on_finished_puzzle = on_finished_puzzle
 
-        self.puzzle_on = False
         self.note_index = 1
         self.cpu_turn = True
         self.user_sequence = []
-        self.correct_sequence = [0, 1, 3, 2, 3]
+        self.correct_sequence = levels[level]
+        self.mummy_source = sources[level]
 
         self.colors = [
             Color(rgb=(0, 1, 0)),  # Green
@@ -86,18 +40,19 @@ class GuitarPuzzle(Puzzle):
         ]
 
         # Setup audio
-        self.notes = [Note(480, p) for p in (60, 64, 67, 72)]
+        self.notes = [Note(480, p) for p in (60, 64, 67, 72, 74)]
         self.audio = PuzzleSound(self.notes, simon_says=True)
+
+        self.tile_size = (self.grid.tile_side_len, self.grid.tile_side_len)
 
         self.place_objects()
 
     def create_mummy(self, pos):
-        size = (self.grid.tile_side_len, self.grid.tile_side_len)
         pos = self.grid.grid_to_pixel(pos)
-        return Mummy(size, pos, self.on_interact_mummy, "./data/mummy.jpg")
+        return Mummy(self.tile_size, pos, self.on_interact_mummy, self.mummy_source)
 
     def create_simon_says(self, pos, idx):
-        size = (self.grid.tile_side_len * 0.75, self.grid.tile_side_len * 0.75)
+        size = (self.tile_size[0] * 0.75, self.tile_size[1] * 0.75)
         pos = self.grid.grid_to_pixel(pos)
         pos = (
             pos[0] + self.grid.tile_side_len // 2,
@@ -107,11 +62,7 @@ class GuitarPuzzle(Puzzle):
         return SimonSays(size, pos, color, idx, self.on_interact_simon_says, self)
 
     def play_game(self, idx=None):
-        if not self.game_over and self.is_game_over():
-            self.on_finished_puzzle()
-            self.on_game_over()
-
-        if self.game_over:
+        if self.is_game_over():
             return
 
         if self.cpu_turn:
@@ -142,11 +93,7 @@ class GuitarPuzzle(Puzzle):
                 self.play_game()
 
     def on_interact_mummy(self):
-        self.puzzle_on = True
-        for pos, obj in self.objects.items():
-            self.remove(obj)
-        self.place_objects()
-
+        self.user_sequence = []
         self.note_index = 1
         self.cpu_turn = True
         self.play_game()
@@ -166,21 +113,19 @@ class GuitarPuzzle(Puzzle):
     def place_objects(self):
         self.objects = {}
         # Add door to switch between rooms
-        size = (self.grid.tile_side_len, self.grid.tile_side_len)
         self.objects[(0, 4)] = DoorTile(
-            size, self.grid.grid_to_pixel((0, 4)), self.prev_room
+            self.tile_size, self.grid.grid_to_pixel((0, 4)), self.prev_room
         )
 
         self.mummy = self.create_mummy((4, 8))
         self.objects[(4, 8)] = self.mummy
 
-        if self.puzzle_on:
-            self.simons = []
-            for idx in range(4):
-                pos = (2 * idx + 1, 4)
-                simon = self.create_simon_says(pos, idx)
-                self.simons.append(simon)
-                self.objects[pos] = simon
+        self.simons = []
+        for idx in range(5):
+            pos = (idx + 2, 4)
+            simon = self.create_simon_says(pos, idx)
+            self.simons.append(simon)
+            self.objects[pos] = simon
 
         self.add(PushMatrix())
         self.add(Translate(*self.grid.pos))
@@ -191,20 +136,47 @@ class GuitarPuzzle(Puzzle):
         self.add(PopMatrix())
 
     def on_player_input(self, button):
+        player_pos = self.character.grid_pos
         if button in [Button.UP, Button.DOWN, Button.LEFT, Button.RIGHT]:
+            # Move the player
             x, y = button.value
-            cur_location = self.character.grid_pos
-            new_location = (cur_location[0] + x, cur_location[1] + y)
+            new_pos = (player_pos[0] + x, player_pos[1] + y)
             self.character.change_direction(button.value)
-            self.character.move_player(new_location)
-            if self.character.grid_pos in self.objects:
-                if isinstance(self.objects[self.character.grid_pos], DoorTile):
-                    return self.objects[self.character.grid_pos].other_room
+            self.character.move_player(new_pos)
+            player_pos = self.character.grid_pos
+
+            # Check if we are walking through a door
+            if player_pos in self.objects:
+                obj = self.objects[player_pos]
+                if isinstance(obj, DoorTile):
+                    if not isinstance(obj.other_room, Puzzle):
+                        # instantiate class when we enter the door
+                        self.objects[player_pos].other_room = obj.other_room(
+                            prev_room=self,
+                            level=self.level + 1,
+                            on_finished_puzzle=self.on_finished_puzzle,
+                        )
+                    return self.objects[player_pos].other_room
+
         elif button == Button.A:
             self.character.interact()
 
     def on_update(self):
         self.audio.on_update()
+
+        if not self.game_over and self.is_game_over():
+            if self.level >= max(levels.keys()):
+                self.on_finished_puzzle()
+                self.on_game_over()
+            else:
+                if (8, 4) not in self.objects:
+                    self.objects[(8, 4)] = DoorTile(
+                        self.tile_size, self.grid.grid_to_pixel((8, 4)), GuitarPuzzle
+                    )
+                self.add(PushMatrix())
+                self.add(Translate(*self.grid.pos))
+                self.add(self.objects[(8, 4)])
+                self.add(PopMatrix())
 
     def on_layout(self, win_size):
         self.remove(self.character)
@@ -214,6 +186,7 @@ class GuitarPuzzle(Puzzle):
 
         self.grid.on_layout(win_size)
         self.add(self.grid)
+        self.tile_size = (self.grid.tile_side_len, self.grid.tile_side_len)
 
         self.place_objects()
 
@@ -221,10 +194,59 @@ class GuitarPuzzle(Puzzle):
         self.add(self.character)
 
         self.create_game_over_text(win_size)
-        if self.game_over:
-            self.remove(self.game_over_window_color)
-            self.remove(self.game_over_window)
-            self.remove(self.game_over_text_color)
-            self.remove(self.game_over_text)
 
-            self.on_game_over()
+
+class SimonSays(InstructionGroup):
+    def __init__(self, size, pos, color, idx, on_interact, puzzle):
+        super().__init__()
+        self.size = size
+        self.pos = pos
+        self.moveable = False
+        self.passable = False
+        self.unactive_color = Color(rgba=(*color.rgb, 1 / 3))
+        self.active_color = Color(rgba=(*color.rgb, 1))
+        self.active = False
+        self.idx = idx
+        self.on_interact = on_interact
+        self.puzzle = puzzle
+
+        self.current_color = Color(rgba=self.unactive_color.rgba)
+        self.rect = CRectangle(csize=self.size, cpos=self.pos)
+        self.add(self.current_color)
+        self.add(self.rect)
+
+        self.deactivate()
+
+    def set_color(self, color):
+        self.remove(self.rect)
+
+        self.current_color = Color(rgba=(*color.rgba,))
+        self.rect = CRectangle(csize=self.size, cpos=self.pos)
+        self.add(self.current_color)
+        self.add(self.rect)
+
+    def interact(self):
+        self.on_interact(self.idx)
+
+    def activate(self):
+        self.set_color(color=self.active_color)
+
+    def deactivate(self):
+        self.set_color(color=self.unactive_color)
+
+    def on_finished_playing(self):
+        self.puzzle.play_game(self.idx)
+
+
+class Mummy(Tile):
+    def __init__(self, size, pos, on_interact, icon_source):
+        super().__init__(size, pos)
+        self.on_interact = on_interact
+        self.icon_source = icon_source
+        self.passable = False
+
+        self.set_color(color=Tile.base_color, source=self.icon_source)
+
+    def interact(self):
+        self.on_interact()
+
