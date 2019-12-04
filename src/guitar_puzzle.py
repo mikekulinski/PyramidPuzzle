@@ -22,6 +22,7 @@ class GuitarPuzzle(Puzzle):
     def __init__(self, prev_room=None, level=0, on_finished_puzzle=None):
         super().__init__()
         self.prev_room = prev_room
+        self.next_room = None
         self.level = level
         self.on_finished_puzzle = on_finished_puzzle
 
@@ -45,6 +46,7 @@ class GuitarPuzzle(Puzzle):
 
         self.tile_size = (self.grid.tile_side_len, self.grid.tile_side_len)
 
+        self.create_objects()
         self.place_objects()
 
     def create_mummy(self, pos):
@@ -105,12 +107,7 @@ class GuitarPuzzle(Puzzle):
         self.audio.set_on_finished(self.simons[idx].on_finished_playing)
         self.audio.note_seq.start_simon_says()
 
-    """ Mandatory Puzzle methods """
-
-    def is_game_over(self):
-        return self.note_index == len(self.correct_sequence) + 1
-
-    def place_objects(self):
+    def create_objects(self):
         self.objects = {}
         # Add door to switch between rooms
         self.objects[(0, 4)] = DoorTile(
@@ -127,6 +124,12 @@ class GuitarPuzzle(Puzzle):
             self.simons.append(simon)
             self.objects[pos] = simon
 
+    """ Mandatory Puzzle methods """
+
+    def is_game_over(self):
+        return self.note_index == len(self.correct_sequence) + 1
+
+    def place_objects(self):
         self.add(PushMatrix())
         self.add(Translate(*self.grid.pos))
 
@@ -169,13 +172,14 @@ class GuitarPuzzle(Puzzle):
                 self.on_finished_puzzle()
                 self.on_game_over()
             else:
-                if (8, 4) not in self.objects:
-                    self.objects[(8, 4)] = DoorTile(
+                if self.next_room is None:
+                    self.next_room = DoorTile(
                         self.tile_size, self.grid.grid_to_pixel((8, 4)), GuitarPuzzle
                     )
+                    self.objects[(8, 4)] = self.next_room
                 self.add(PushMatrix())
                 self.add(Translate(*self.grid.pos))
-                self.add(self.objects[(8, 4)])
+                self.add(self.next_room)
                 self.add(PopMatrix())
 
     def on_layout(self, win_size):
