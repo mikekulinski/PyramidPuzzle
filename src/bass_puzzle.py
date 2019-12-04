@@ -25,7 +25,7 @@ string_pitches = [
 
 string_heights = {0: [4], 1: [4, 5], 2: [3, 4, 5], 3: [3, 4, 5, 6]}
 
-correct_frets = {0: [3], 1: [7, 2], 2: [2, 6, 4], 3: [1, 7, 5, 3]}
+actual_frets = {0: [3], 1: [7, 2], 2: [2, 6, 4], 3: [1, 7, 5, 3]}
 
 
 class BassPuzzle(Puzzle):
@@ -41,8 +41,8 @@ class BassPuzzle(Puzzle):
         self.string_pitches = string_pitches[: self.num_strings]
 
         # Start the blocks all the way to the left every time
-        self.actual_frets = [1 for _ in range(self.num_strings)]
-        self.correct_frets = correct_frets[level]
+        self.current_frets = [1 for _ in range(self.num_strings)]
+        self.actual_frets = actual_frets[level]
 
         self.played_strings = []
 
@@ -71,8 +71,12 @@ class BassPuzzle(Puzzle):
             height = self.string_heights[i]
             self.strings.append(self.create_string(height, i))
 
+            # Create the play buttons
+            button_pos = (0, height)
+            self.objects[button_pos] = self.create_play_button(button_pos)
+
             # Create the corresponding fret
-            fret_x = self.actual_frets[i]
+            fret_x = self.current_frets[i]
             fret_y = self.string_heights[i]
             grid_loc = (fret_x, fret_y)
             self.objects[grid_loc] = self.create_fret(grid_loc, i)
@@ -91,6 +95,10 @@ class BassPuzzle(Puzzle):
     def create_fret(self, grid_loc, string_idx):
         pos = self.grid.grid_to_pixel(grid_loc)
         return FretBlock(self.tile_size, grid_loc, pos, string_idx)
+
+    def create_play_button(self, grid_loc):
+        pos = self.grid.grid_to_pixel(grid_loc)
+        return PlayButton(self.tile_size, pos)
 
     def place_objects(self):
         self.add(PushMatrix())
@@ -116,7 +124,7 @@ class BassPuzzle(Puzzle):
             self.add(obj)
             self.add(PopMatrix())
 
-            self.actual_frets[block.string_idx] = new_pos[0]
+            self.current_frets[block.string_idx] = new_pos[0]
 
     def valid_block_move(self, block, pos):
         same_height = pos[1] == block.grid_pos[1]
@@ -173,27 +181,37 @@ class BassPuzzle(Puzzle):
                     return self.objects[player_pos].other_room
 
             elif player_pos[0] == 8 and player_pos[1] in self.string_heights:
-                print("Walking on the last column")
                 string_idx = self.string_heights.index(player_pos[1])
-                self.play_string(string_idx)
+                self.play_current(string_idx)
 
         elif button == Button.A:
-            pass
-            # self.character.interact()
+            if player_pos in self.objects:
+                obj = self.objects[player_pos]
+                if isinstance(obj, PlayButton):
+                    print("Playing actual note")
+                    string_idx = self.string_heights.index(player_pos[1])
+                    self.play_actual(string_idx)
 
-    def play_string(self, string_idx):
-        fret_pos = self.actual_frets[string_idx]
+    def play_current(self, string_idx):
+        fret_pos = self.current_frets[string_idx]
         pitch = self.string_pitches[string_idx][fret_pos - 1]
         note = Note(480, pitch)
         self.audio.set_notes([note])
         self.audio.toggle()
 
         correct_string = string_idx == len(self.played_strings)
-        correct_fret = self.actual_frets[string_idx] == self.correct_frets[string_idx]
+        correct_fret = self.current_frets[string_idx] == self.actual_frets[string_idx]
         if correct_string and correct_fret:
             self.played_strings.append(string_idx)
         else:
             self.played_strings = []
+
+    def play_actual(self, string_idx):
+        fret_pos = self.actual_frets[string_idx]
+        pitch = self.string_pitches[string_idx][fret_pos - 1]
+        note = Note(480, pitch)
+        self.audio.set_notes([note])
+        self.audio.toggle()
 
     def on_layout(self, win_size):
         self.remove(self.character)
@@ -237,5 +255,15 @@ class FretBlock(Tile):
         self.icon_source = "./data/boulder.jpg"
         self.passable = False
         self.moveable = True
+        self.set_color(color=Tile.base_color, source=self.icon_source)
+
+
+class PlayButton(Tile):
+    def __init__(self, size, pos):
+        super().__init__(size, pos)
+
+        self.icon_source = "./data/play_button.png"
+        self.passable = True
+        self.moveable = False
         self.set_color(color=Tile.base_color, source=self.icon_source)
 
