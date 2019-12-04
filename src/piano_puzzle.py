@@ -43,18 +43,10 @@ levels = {
         Note(240, 64),
         Note(240, 63),
         Note(240, 64),
+        Note(240, 66),
+        Note(240, 62),
     ), "D"],
     2: [(
-        Note(480, 60),
-        Note(480, 62),
-        Note(480, 64),
-        Note(480, 65),
-        Note(480, 67),
-        Note(480, 69),
-        Note(480, 71),
-        Note(480, 72),
-    ), "F"],
-    3: [(
         Note(480, 69),
         Note(480, 70),
         Note(480, 72),
@@ -63,7 +55,25 @@ levels = {
         Note(480, 69),
         Note(480, 71),
         Note(480, 72),
-    ), "Bb"]
+    ), "F"],
+    3: [(
+        Note(480, 70),
+        Note(480, 69),
+        Note(480, 67),
+        Note(480, 59),
+        Note(480, 63),
+        Note(480, 65),
+        Note(480, 63),
+        Note(480, 63),
+        Note(480, 62),
+        Note(480, 63),
+        Note(480, 69),
+        Note(480, 70),
+        Note(480, 73),
+        Note(480, 71),
+        Note(480, 70),
+        Note(480, 71),
+    ), "Bb"],
 }
 
 notes_w_staff_lines = ["E4", "G4", "B4", "D5", "F5"]
@@ -158,6 +168,7 @@ class PianoPuzzle(Puzzle):
         key_sig = keys[self.user_key]
         for note in self.user_notes:
             base_letter = note.get_letter()[0]
+            letter_before = names[names.index(base_letter) - 1]
             if base_letter not in key_sig["#"]:
                 note.remove_sharp()
             if base_letter not in key_sig["b"]:
@@ -165,7 +176,7 @@ class PianoPuzzle(Puzzle):
 
             if base_letter in key_sig["#"] and not (note.get_letter()[:-1] == base_letter + '#'): 
                 note.add_sharp()
-            if base_letter in key_sig["b"]:
+            if base_letter in key_sig["b"] and not (note.get_letter()[:-1] == letter_before + '#'):
                 note.add_flat()
 
     """ Mandatory Puzzle methods """
