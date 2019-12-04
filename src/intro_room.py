@@ -21,16 +21,16 @@ class IntroRoom(Puzzle):
         self.instructions_window = Rectangle(
             pos=(margin, margin),
             size=(
-                self.grid.grid_side_len - 2 * margin,
+                self.grid.grid_side_len - 2 * margin - 2 * self.grid.tile_side_len,
                 3 * self.grid.tile_side_len - 2 * margin,
             ),
         )
         self.instructions_text_color = Color(rgba=(0, 0, 0, 1))
         self.instructions_text = CLabelRect(
-            (self.win_size[0] // 2, self.win_size[1] // 6),
+            (self.win_size[0] // 2, self.win_size[1] // 4.3),
             "Move around the room with the arrow keys\n"
             + "Press 'a' to interact with objects",
-            40,
+            34,
         )
 
         self.add(PushMatrix())
