@@ -21,6 +21,13 @@ sources = ["./data/sarco.jpg", "./data/mummy.jpg", "./data/anubis.jpg", "./data/
 class GuitarPuzzle(Puzzle):
     def __init__(self, prev_room=None, level=0, on_finished_puzzle=None):
         super().__init__()
+        self.door_sources = {
+            (4, 9): "./data/Door_up.png",  # UP
+            (4, -1): "./data/door_down.png",  # DOWN
+            (-1, 4): "./data/door_left.png",  # LEFT
+            (9, 4): "./data/Door_right.png",  # RIGHT
+        }
+
         self.prev_room = prev_room
         self.next_room = None
         self.level = level
@@ -114,8 +121,11 @@ class GuitarPuzzle(Puzzle):
     def create_objects(self):
         self.objects = {}
         # Add door to switch between rooms
-        self.objects[(0, 4)] = DoorTile(
-            self.tile_size, self.grid.grid_to_pixel((0, 4)), self.prev_room
+        self.objects[(-1, 4)] = DoorTile(
+            self.tile_size,
+            self.grid.grid_to_pixel((-1, 4)),
+            self.prev_room,
+            source=self.door_sources[(-1, 4)],
         )
 
         self.mummy = self.create_mummy((4, 8))
@@ -148,26 +158,30 @@ class GuitarPuzzle(Puzzle):
             # Move the player
             x, y = button.value
             new_pos = (player_pos[0] + x, player_pos[1] + y)
-            self.character.change_direction(button.value)
-            self.character.move_player(new_pos)
-            player_pos = self.character.grid_pos
 
             # Check if we are walking through a door
-            if player_pos in self.objects:
-                obj = self.objects[player_pos]
+            if new_pos in self.objects:
+                obj = self.objects[new_pos]
                 if isinstance(obj, DoorTile):
                     if not isinstance(obj.other_room, Puzzle):
                         # instantiate class when we enter the door
-                        self.objects[player_pos].other_room = obj.other_room(
+                        self.objects[new_pos].other_room = obj.other_room(
                             prev_room=self,
                             level=self.level + 1,
                             on_finished_puzzle=self.on_finished_puzzle,
                         )
-                    next_room_pos = (8 - player_pos[0], 8 - player_pos[1])
-                    self.objects[player_pos].other_room.character.move_player(
+                    next_room_pos = (8 - new_pos[0] + x, 8 - new_pos[1] + y)
+                    self.objects[new_pos].other_room.character.change_direction(
+                        button.value
+                    )
+                    self.objects[new_pos].other_room.character.move_player(
                         next_room_pos
                     )
-                    return self.objects[player_pos].other_room
+                    return self.objects[new_pos].other_room
+
+            self.character.change_direction(button.value)
+            self.character.move_player(new_pos)
+            player_pos = self.character.grid_pos
 
         elif button == Button.A:
             self.character.interact()
@@ -182,9 +196,12 @@ class GuitarPuzzle(Puzzle):
             else:
                 if self.next_room is None:
                     self.next_room = DoorTile(
-                        self.tile_size, self.grid.grid_to_pixel((8, 4)), GuitarPuzzle
+                        self.tile_size,
+                        self.grid.grid_to_pixel((9, 4)),
+                        GuitarPuzzle,
+                        source=self.door_sources[(9, 4)],
                     )
-                    self.objects[(8, 4)] = self.next_room
+                    self.objects[(9, 4)] = self.next_room
                 self.add(PushMatrix())
                 self.add(Translate(*self.grid.pos))
                 self.add(self.next_room)

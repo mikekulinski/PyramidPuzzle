@@ -61,9 +61,9 @@ class Switch(Tile):
 
 
 class DoorTile(Tile):
-    def __init__(self, size, pos, other_room):
+    def __init__(self, size, pos, other_room, source=None):
         super().__init__(size, pos)
-        self.set_color(color=Color(rgba=(0, 0, 0, 1)))
+        self.set_color(color=Tile.base_color, source=source)
         self.other_room = other_room
         self.moveable = False
 

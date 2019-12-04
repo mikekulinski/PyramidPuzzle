@@ -30,6 +30,13 @@ all_rests = [[Note(480, 0) for i in instruments] for _ in range(8)]
 class DrumsPuzzle(Puzzle):
     def __init__(self, prev_room, level=0, on_finished_puzzle=None):
         super().__init__()
+        self.door_sources = {
+            (4, 9): "./data/Door_up.png",  # UP
+            (4, -1): "./data/door_down.png",  # DOWN
+            (-1, 4): "./data/door_left.png",  # LEFT
+            (9, 4): "./data/Door_right.png",  # RIGHT
+        }
+
         self.prev_room = prev_room
         self.level = level
         self.on_finished_puzzle = on_finished_puzzle
@@ -64,8 +71,11 @@ class DrumsPuzzle(Puzzle):
     def create_objects(self):
         self.objects = {}
         size = (self.grid.tile_side_len, self.grid.tile_side_len)
-        self.objects[(4, 8)] = DoorTile(
-            size, self.grid.grid_to_pixel((4, 8)), self.prev_room
+        self.objects[(4, 9)] = DoorTile(
+            size,
+            self.grid.grid_to_pixel((4, 9)),
+            self.prev_room,
+            source=self.door_sources[(4, 9)],
         )
         self.objects[(6, 6)] = ResetButton(size, self.grid.grid_to_pixel((6, 6)))
         x_topleft, y_topleft = (2, 5)
@@ -106,26 +116,31 @@ class DrumsPuzzle(Puzzle):
             # Move the player
             x, y = button.value
             new_pos = (player_pos[0] + x, player_pos[1] + y)
-            self.character.change_direction(button.value)
-            self.character.move_player(new_pos)
-            player_pos = self.character.grid_pos
 
             # Check if we are walking through a door
-            if player_pos in self.objects:
-                obj = self.objects[player_pos]
+            if new_pos in self.objects:
+                obj = self.objects[new_pos]
                 if isinstance(obj, DoorTile):
                     if not isinstance(obj.other_room, Puzzle):
                         # instantiate class when we enter the door
-                        self.objects[player_pos].other_room = obj.other_room(
+                        self.objects[new_pos].other_room = obj.other_room(
                             prev_room=self,
                             level=self.level + 1,
                             on_finished_puzzle=self.on_finished_puzzle,
                         )
-                    next_room_pos = (8 - player_pos[0], 8 - player_pos[1])
-                    self.objects[player_pos].other_room.character.move_player(
+                    next_room_pos = (8 - new_pos[0] + x, 8 - new_pos[1] + y)
+                    self.objects[new_pos].other_room.character.change_direction(
+                        button.value
+                    )
+                    self.objects[new_pos].other_room.character.move_player(
                         next_room_pos
                     )
-                    return self.objects[player_pos].other_room
+                    return self.objects[new_pos].other_room
+
+            self.character.change_direction(button.value)
+            self.character.move_player(new_pos)
+            player_pos = self.character.grid_pos
+
         elif button == Button.A:
             if player_pos in self.objects:
                 obj = self.objects[player_pos]
@@ -146,14 +161,17 @@ class DrumsPuzzle(Puzzle):
                     self.on_finished_puzzle()
                     self.on_game_over()
                 else:
-                    if (4,0) not in self.objects:
+                    if (4, -1) not in self.objects:
                         size = (self.grid.tile_side_len, self.grid.tile_side_len)
-                        self.objects[(4, 0)] = DoorTile(
-                            size, self.grid.grid_to_pixel((4, 0)), DrumsPuzzle
+                        self.objects[(4, -1)] = DoorTile(
+                            size,
+                            self.grid.grid_to_pixel((4, -1)),
+                            DrumsPuzzle,
+                            source=self.door_sources[(4, -1)],
                         )
                     self.add(PushMatrix())
                     self.add(Translate(*self.grid.pos))
-                    self.add(self.objects[(4, 0)])
+                    self.add(self.objects[(4, -1)])
                     self.add(PopMatrix())
 
     def on_layout(self, win_size):

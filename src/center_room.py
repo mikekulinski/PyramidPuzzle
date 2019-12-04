@@ -1,4 +1,4 @@
-from kivy.graphics import PopMatrix, PushMatrix, Translate
+from kivy.graphics import PopMatrix, PushMatrix, Translate, Color
 
 from src.button import Button
 from src.drums_puzzle import DrumsPuzzle
@@ -15,36 +15,43 @@ class CenterRoom(Puzzle):
         super().__init__()
 
         self.puzzles = {
-            (4, 8): BassPuzzle,  # UP
-            (4, 0): DrumsPuzzle,  # DOWN
-            (0, 4): PianoPuzzle,  # LEFT
-            (8, 4): GuitarPuzzle,  # RIGHT
+            (4, 9): BassPuzzle,  # UP
+            (4, -1): DrumsPuzzle,  # DOWN
+            (-1, 4): PianoPuzzle,  # LEFT
+            (9, 4): GuitarPuzzle,  # RIGHT
         }
 
         self.puzzle_finished = {
-            (4, 8): False,  # UP
-            (4, 0): False,  # DOWN
-            (0, 4): False,  # LEFT
-            (8, 4): False,  # RIGHT
+            (4, 9): False,  # UP
+            (4, -1): False,  # DOWN
+            (-1, 4): False,  # LEFT
+            (9, 4): False,  # RIGHT
         }
 
         self.icon_sources = {
-            (4, 8): "./data/bass.png",  # UP
-            (4, 0): "./data/drums.png",  # DOWN
-            (0, 4): "./data/piano.png",  # LEFT
-            (8, 4): "./data/guitar.png",  # RIGHT
+            (4, 9): "./data/bass.png",  # UP
+            (4, -1): "./data/drums.png",  # DOWN
+            (-1, 4): "./data/piano.png",  # LEFT
+            (9, 4): "./data/guitar.png",  # RIGHT
+        }
+
+        self.door_sources = {
+            (4, 9): "./data/Door_up.png",  # UP
+            (4, -1): "./data/door_down.png",  # DOWN
+            (-1, 4): "./data/door_left.png",  # LEFT
+            (9, 4): "./data/Door_right.png",  # RIGHT
         }
 
         self.last_entered = (0, 0)
 
         self.tile_size = (self.grid.tile_side_len, self.grid.tile_side_len)
-
-        self.create_objects()
-        self.place_objects()
-
         self.treasure_room = DoorTile(
             self.tile_size, self.grid.grid_to_pixel((4, 4)), TreasureRoom
         )
+        self.treasure_room.set_color(Color(rgba=(0, 0, 0, 1)))
+
+        self.create_objects()
+        self.place_objects()
 
     def on_finished_puzzle(self):
         if self.last_entered in self.puzzle_finished:
@@ -56,8 +63,6 @@ class CenterRoom(Puzzle):
             self.remove(obj)
         self.create_objects()
         self.place_objects()
-
-        # self.character.move_player((2, 2))
 
     def create_icon(self, loc, source):
         tile = Tile(self.tile_size, self.grid.grid_to_pixel(loc))
@@ -80,7 +85,10 @@ class CenterRoom(Puzzle):
                 self.objects[loc] = self.create_icon(loc, self.icon_sources[loc])
             else:
                 self.objects[loc] = DoorTile(
-                    self.tile_size, self.grid.grid_to_pixel(loc), puzzle
+                    self.tile_size,
+                    self.grid.grid_to_pixel(loc),
+                    puzzle,
+                    source=self.door_sources[loc],
                 )
 
         if self.is_game_over():
@@ -101,25 +109,30 @@ class CenterRoom(Puzzle):
             # Move the player
             x, y = button.value
             new_pos = (player_pos[0] + x, player_pos[1] + y)
+
+            # Check if we are walking through a door
+            if new_pos in self.objects:
+                obj = self.objects[new_pos]
+                if isinstance(obj, DoorTile):
+                    self.last_entered = new_pos
+                    if not isinstance(obj.other_room, Puzzle):
+                        # instantiate class when we enter the door
+                        self.objects[new_pos].other_room = obj.other_room(
+                            prev_room=self, on_finished_puzzle=self.on_finished_puzzle
+                        )
+
+                    next_room_pos = (8 - new_pos[0] + x, 8 - new_pos[1] + y)
+                    self.objects[new_pos].other_room.character.change_direction(
+                        button.value
+                    )
+                    self.objects[new_pos].other_room.character.move_player(
+                        next_room_pos
+                    )
+                    return self.objects[new_pos].other_room
+
             self.character.change_direction(button.value)
             self.character.move_player(new_pos)
             player_pos = self.character.grid_pos
-
-            # Check if we are walking through a door
-            if player_pos in self.objects:
-                obj = self.objects[player_pos]
-                if isinstance(obj, DoorTile):
-                    self.last_entered = player_pos
-                    if not isinstance(obj.other_room, Puzzle):
-                        # instantiate class when we enter the door
-                        self.objects[player_pos].other_room = obj.other_room(
-                            prev_room=self, on_finished_puzzle=self.on_finished_puzzle
-                        )
-                    next_room_pos = (8 - player_pos[0], 8 - player_pos[1])
-                    self.objects[player_pos].other_room.character.move_player(
-                        next_room_pos
-                    )
-                    return self.objects[player_pos].other_room
 
     def on_update(self):
         if not self.game_over and self.is_game_over():

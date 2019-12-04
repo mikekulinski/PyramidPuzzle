@@ -31,6 +31,14 @@ actual_frets = {0: [3], 1: [7, 2], 2: [2, 6, 4], 3: [1, 7, 5, 3]}
 class BassPuzzle(Puzzle):
     def __init__(self, level=0, prev_room=None, on_finished_puzzle=None):
         super().__init__()
+
+        self.door_sources = {
+            (4, 9): "./data/Door_up.png",  # UP
+            (4, -1): "./data/door_down.png",  # DOWN
+            (-1, 4): "./data/door_left.png",  # LEFT
+            (9, 4): "./data/Door_right.png",  # RIGHT
+        }
+
         self.level = level
         self.prev_room = prev_room
         self.next_room = None
@@ -61,8 +69,11 @@ class BassPuzzle(Puzzle):
 
     def create_objects(self):
         self.objects = {}
-        self.objects[(4, 0)] = DoorTile(
-            self.tile_size, self.grid.grid_to_pixel((4, 0)), self.prev_room
+        self.objects[(4, -1)] = DoorTile(
+            self.tile_size,
+            self.grid.grid_to_pixel((4, -1)),
+            self.prev_room,
+            self.door_sources[(4, -1)],
         )
 
         self.strings = []
@@ -140,9 +151,12 @@ class BassPuzzle(Puzzle):
             else:
                 if self.next_room is None:
                     self.next_room = DoorTile(
-                        self.tile_size, self.grid.grid_to_pixel((4, 8)), BassPuzzle
+                        self.tile_size,
+                        self.grid.grid_to_pixel((4, 9)),
+                        BassPuzzle,
+                        self.door_sources[(4, 9)],
                     )
-                    self.objects[(4, 8)] = self.next_room
+                    self.objects[(4, 9)] = self.next_room
                 self.add(PushMatrix())
                 self.add(Translate(*self.grid.pos))
                 self.add(self.next_room)
@@ -156,6 +170,25 @@ class BassPuzzle(Puzzle):
             self.character.change_direction(button.value)
 
             if new_pos in self.objects:
+                obj = self.objects[new_pos]
+                if isinstance(obj, DoorTile):
+                    if not isinstance(obj.other_room, Puzzle):
+                        # instantiate class when we enter the door
+                        self.objects[new_pos].other_room = obj.other_room(
+                            prev_room=self,
+                            level=self.level + 1,
+                            on_finished_puzzle=self.on_finished_puzzle,
+                        )
+                    next_room_pos = (8 - new_pos[0] + x, 8 - new_pos[1] + y)
+                    self.objects[new_pos].other_room.character.change_direction(
+                        button.value
+                    )
+                    self.objects[new_pos].other_room.character.move_player(
+                        next_room_pos
+                    )
+                    return self.objects[new_pos].other_room
+
+            if new_pos in self.objects:
                 block = self.objects[new_pos]
                 if block.moveable:
                     new_block_pos = (new_pos[0] + x, new_pos[1] + y)
@@ -164,23 +197,7 @@ class BassPuzzle(Puzzle):
             self.character.move_player(new_pos)
             player_pos = self.character.grid_pos
 
-            if player_pos in self.objects:
-                obj = self.objects[player_pos]
-                if isinstance(obj, DoorTile):
-                    if not isinstance(obj.other_room, Puzzle):
-                        # instantiate class when we enter the door
-                        self.objects[player_pos].other_room = obj.other_room(
-                            prev_room=self,
-                            level=self.level + 1,
-                            on_finished_puzzle=self.on_finished_puzzle,
-                        )
-                    next_room_pos = (8 - player_pos[0], 8 - player_pos[1])
-                    self.objects[player_pos].other_room.character.move_player(
-                        next_room_pos
-                    )
-                    return self.objects[player_pos].other_room
-
-            elif player_pos[0] == 8 and player_pos[1] in self.string_heights:
+            if player_pos[0] == 8 and player_pos[1] in self.string_heights:
                 string_idx = self.string_heights.index(player_pos[1])
                 self.play_current(string_idx)
 

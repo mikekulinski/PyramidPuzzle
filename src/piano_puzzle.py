@@ -20,60 +20,72 @@ from src.puzzle_sound import Note, PuzzleSound
 from src.puzzle import Puzzle
 
 levels = {
-    0: [(
-        Note(480, 62),
-        Note(480, 64),
-        Note(480, 65),
-        Note(480, 67),
-        Note(480, 69),
-        Note(480, 71),
-        Note(480, 72),
-        Note(480, 74),
-    ), "C"],
-    1: [(
-        Note(240, 74),
-        Note(240, 73),
-        Note(240, 70),
-        Note(240, 73),
-        Note(240, 74),
-        Note(240, 70),
-        Note(240, 68),
-        Note(240, 66),
-        Note(240, 62),
-        Note(240, 64),
-        Note(240, 63),
-        Note(240, 64),
-        Note(240, 66),
-        Note(240, 62),
-    ), "D"],
-    2: [(
-        Note(480, 69),
-        Note(480, 70),
-        Note(480, 72),
-        Note(480, 69),
-        Note(480, 67),
-        Note(480, 69),
-        Note(480, 71),
-        Note(480, 72),
-    ), "F"],
-    3: [(
-        Note(480, 70),
-        Note(480, 69),
-        Note(480, 67),
-        Note(480, 59),
-        Note(480, 63),
-        Note(480, 65),
-        Note(480, 63),
-        Note(480, 63),
-        Note(480, 62),
-        Note(480, 63),
-        Note(480, 69),
-        Note(480, 70),
-        Note(480, 73),
-        Note(480, 71),
-        Note(480, 70),
-        Note(480, 71),
-    ), "Bb"],
+    0: [
+        (
+            Note(480, 62),
+            Note(480, 64),
+            Note(480, 65),
+            Note(480, 67),
+            Note(480, 69),
+            Note(480, 71),
+            Note(480, 72),
+            Note(480, 74),
+        ),
+        "C",
+    ],
+    1: [
+        (
+            Note(240, 74),
+            Note(240, 73),
+            Note(240, 70),
+            Note(240, 73),
+            Note(240, 74),
+            Note(240, 70),
+            Note(240, 68),
+            Note(240, 66),
+            Note(240, 62),
+            Note(240, 64),
+            Note(240, 63),
+            Note(240, 64),
+            Note(240, 66),
+            Note(240, 62),
+        ),
+        "D",
+    ],
+    2: [
+        (
+            Note(480, 69),
+            Note(480, 70),
+            Note(480, 72),
+            Note(480, 69),
+            Note(480, 67),
+            Note(480, 69),
+            Note(480, 71),
+            Note(480, 72),
+        ),
+        "F",
+    ],
+    3: [
+        (
+            Note(480, 70),
+            Note(480, 69),
+            Note(480, 67),
+            Note(480, 59),
+            Note(480, 63),
+            Note(480, 65),
+            Note(480, 63),
+            Note(480, 63),
+            Note(480, 62),
+            Note(480, 63),
+            Note(480, 69),
+            Note(480, 70),
+            Note(480, 73),
+            Note(480, 71),
+            Note(480, 70),
+            Note(480, 71),
+        ),
+        "Bb",
+    ],
 }
 
 notes_w_staff_lines = ["E4", "G4", "B4", "D5", "F5"]
@@ -100,6 +112,13 @@ keys = {
 class PianoPuzzle(Puzzle):
     def __init__(self, prev_room, level=0, on_finished_puzzle=None):
         super().__init__()
+        self.door_sources = {
+            (4, 9): "./data/Door_up.png",  # UP
+            (4, -1): "./data/door_down.png",  # DOWN
+            (-1, 4): "./data/door_left.png",  # LEFT
+            (9, 4): "./data/Door_right.png",  # RIGHT
+        }
+
         self.prev_room = prev_room
         self.on_finished_puzzle = on_finished_puzzle
         self.animations = AnimGroup()
@@ -114,7 +133,9 @@ class PianoPuzzle(Puzzle):
 
         self.actual_sound = PuzzleSound(self.notes)
         self.user_sound = PuzzleSound(self.user_notes)
-        self.music_bar = MusicBar(self.notes, self.user_notes, render_user_notes, self.actual_sound)
+        self.music_bar = MusicBar(
+            self.notes, self.user_notes, render_user_notes, self.actual_sound
+        )
         self.animations.add(self.music_bar)
         self.add(self.animations)
 
@@ -144,7 +165,9 @@ class PianoPuzzle(Puzzle):
     def create_instructions(self, win_size):
         self.instructions_text_color = Color(rgba=(1, 1, 1, 1))
         self.instructions_text = CLabelRect(
-            (win_size[0] // 8, win_size[1]*4/7), "Press + to hear your note sequence.\nPress - to hear the sequence\nyou are trying to match.", 20
+            (win_size[0] // 8, win_size[1] * 4 / 7),
+            "Press + to hear your note sequence.\nPress - to hear the sequence\nyou are trying to match.",
+            20,
         )
 
     def on_pitch_change(self, pitch_index):
@@ -174,9 +197,13 @@ class PianoPuzzle(Puzzle):
             if base_letter not in key_sig["b"]:
                 note.remove_flat()
 
-            if base_letter in key_sig["#"] and not (note.get_letter()[:-1] == base_letter + '#'): 
+            if base_letter in key_sig["#"] and not (
+                note.get_letter()[:-1] == base_letter + "#"
+            ):
                 note.add_sharp()
-            if base_letter in key_sig["b"] and not (note.get_letter()[:-1] == letter_before + '#'):
+            if base_letter in key_sig["b"] and not (
+                note.get_letter()[:-1] == letter_before + "#"
+            ):
                 note.add_flat()
 
     """ Mandatory Puzzle methods """
@@ -224,8 +251,11 @@ class PianoPuzzle(Puzzle):
             "./data/key_icon.jpeg",
             self.on_key_change,
         )
-        self.objects[(8, 4)] = DoorTile(
-            size, self.grid.grid_to_pixel((8, 4)), self.prev_room
+        self.objects[(9, 4)] = DoorTile(
+            size,
+            self.grid.grid_to_pixel((9, 4)),
+            self.prev_room,
+            source=self.door_sources[(9, 4)],
         )
 
     def place_objects(self):
@@ -288,6 +318,22 @@ class PianoPuzzle(Puzzle):
             move_possible = True
             x, y = button.value
             new_pos = (player_pos[0] + x, player_pos[1] + y)
+            if new_pos in self.objects:
+                if isinstance(self.objects[new_pos], DoorTile):
+                    if not isinstance(self.objects[new_pos].other_room, Puzzle):
+                        # instantiate class when we enter the door
+                        self.objects[new_pos].other_room = self.objects[
+                            new_pos
+                        ].other_room(self, self.level + 1, self.on_finished_puzzle)
+                    next_room_pos = (8 - new_pos[0] + x, 8 - new_pos[1] + y)
+                    self.objects[new_pos].other_room.character.change_direction(
+                        button.value
+                    )
+                    self.objects[new_pos].other_room.character.move_player(
+                        next_room_pos
+                    )
+                    return self.objects[new_pos].other_room
+
             self.character.change_direction(button.value)
 
             if new_pos in self.objects:
@@ -296,20 +342,7 @@ class PianoPuzzle(Puzzle):
             if move_possible:
                 self.character.move_player(new_pos)
                 player_pos = self.character.grid_pos
-            if self.character.grid_pos in self.objects:
-                if isinstance(self.objects[self.character.grid_pos], DoorTile):
-                    if not isinstance(
-                        self.objects[self.character.grid_pos].other_room, Puzzle
-                    ):
-                        # instantiate class when we enter the door
-                        self.objects[self.character.grid_pos].other_room = self.objects[
-                            self.character.grid_pos
-                        ].other_room(self, self.level + 1, self.on_finished_puzzle)
-                    next_room_pos = (8 - player_pos[0], 8 - player_pos[1])
-                    self.objects[player_pos].other_room.character.move_player(
-                        next_room_pos
-                    )
-                    return self.objects[self.character.grid_pos].other_room
+
         if button == Button.MINUS:
             self.play(actual=True)
         elif button == Button.PLUS:
@@ -328,14 +361,17 @@ class PianoPuzzle(Puzzle):
                 self.on_finished_puzzle()
                 self.on_game_over()
             else:
-                if (0,4) not in self.objects:
+                if (-1, 4) not in self.objects:
                     size = (self.grid.tile_side_len, self.grid.tile_side_len)
-                    self.objects[(0, 4)] = DoorTile(
-                        size, self.grid.grid_to_pixel((0, 4)), PianoPuzzle
+                    self.objects[(-1, 4)] = DoorTile(
+                        size,
+                        self.grid.grid_to_pixel((-1, 4)),
+                        PianoPuzzle,
+                        source=self.door_sources[(-1, 4)],
                     )
                 self.add(PushMatrix())
                 self.add(Translate(*self.grid.pos))
-                self.add(self.objects[(0, 4)])
+                self.add(self.objects[(-1, 4)])
                 self.add(PopMatrix())
 
     def on_layout(self, win_size):
@@ -399,8 +435,10 @@ class MusicBar(InstructionGroup):
         self.notes_start = self.win_size[0] / 10
         self.notes_width = self.win_size[0] - self.notes_start
 
-        t = self.tempo_map.tick_to_time(sum(note.get_dur() for note in self.actual_notes))
-        #t = (sum(note.get_dur() for note in self.actual_notes) + 480) / 960
+        t = self.tempo_map.tick_to_time(
+            sum(note.get_dur() for note in self.actual_notes)
+        )
+        # t = (sum(note.get_dur() for note in self.actual_notes) + 480) / 960
         self.now_bar = Line(
             points=(self.notes_start, self.height, self.notes_start, self.win_size[1])
         )
