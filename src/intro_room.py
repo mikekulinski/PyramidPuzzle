@@ -4,7 +4,7 @@ from common.gfxutil import CLabelRect
 
 from src.button import Button
 from src.center_room import CenterRoom
-from src.grid import PyramidTile
+from src.grid import PyramidTile, Tile
 from src.puzzle import Puzzle
 
 
@@ -57,6 +57,11 @@ class IntroRoom(Puzzle):
         pos = (pos[0] - 2 * self.grid.tile_side_len, pos[1])
 
         self.objects[(8, 4)] = PyramidTile(size, pos, CenterRoom, "./data/pyramid.png")
+        for i in range(9):
+            for j in range(5,9):
+                self.grid.get_tile((i,j)).set_color(color=Color(rgb=(.5, .8, .9)))
+            for j in range(5):
+                self.grid.get_tile((i,j)).set_color(color=Tile.base_color, source="./data/sand3.png")
 
         self.add(PushMatrix())
         self.add(Translate(*self.grid.pos))
@@ -97,3 +102,4 @@ class IntroRoom(Puzzle):
 
         self.place_objects()
         self.create_instructions()
+
