@@ -161,10 +161,12 @@ class DrumsPuzzle(Puzzle):
         for pos, obj in self.objects.items():
             self.remove(obj)
         self.remove(self.grid)
+        self.remove(self.drum_graphics)
 
         self.grid.on_layout(win_size)
         self.add(self.grid)
         self.drum_graphics.on_layout(win_size)
+        self.add(self.drum_graphics)
 
         self.place_objects()
 
@@ -190,6 +192,7 @@ class DrumPatternGraphics(InstructionGroup):
 
     def render_elements(self):
         size = self.win_size[0] / 6
+        self.add(Color(rgb=(1, 1, 1)))
         self.grid = CRectangle(
             cpos=(self.win_size[0] // 10, self.win_size[1] // 6), csize=(size, size)
         )
@@ -215,7 +218,6 @@ class DrumPatternGraphics(InstructionGroup):
                     self.squares.append(sq)
 
     def on_layout(self, win_size):
-        self.clear()
         self.win_size = win_size
         self.render_elements()
 
