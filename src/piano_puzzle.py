@@ -157,14 +157,15 @@ class PianoPuzzle(Puzzle):
     def update_key(self):
         key_sig = keys[self.user_key]
         for note in self.user_notes:
-            if note.get_letter()[0] not in key_sig["#"]:
+            base_letter = note.get_letter()[0]
+            if base_letter not in key_sig["#"]:
                 note.remove_sharp()
-            if note.get_letter()[0] not in key_sig["b"]:
+            if base_letter not in key_sig["b"]:
                 note.remove_flat()
 
-            if note.get_letter()[0] in key_sig["#"]: 
+            if base_letter in key_sig["#"] and note.get_letter()[:-1] == base_letter + '#': 
                 note.add_sharp()
-            if note.get_letter()[0] in key_sig["b"]:
+            if base_letter in key_sig["b"]:
                 note.add_flat()
 
     """ Mandatory Puzzle methods """
