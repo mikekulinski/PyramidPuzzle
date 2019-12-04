@@ -60,7 +60,7 @@ class BassPuzzle(Puzzle):
         self.create_objects()
         self.place_objects()
 
-        self.audio = PuzzleSound([], bass_puzzle=True)
+        self.audio = PuzzleSound([], preset=33, bass_puzzle=True)
 
     """ Mandatory Puzzle methods """
 

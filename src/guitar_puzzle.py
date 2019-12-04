@@ -49,7 +49,7 @@ class GuitarPuzzle(Puzzle):
 
         # Setup audio
         self.notes = [Note(480, p) for p in (60, 64, 67, 72, 74)]
-        self.audio = PuzzleSound(self.notes, simon_says=True)
+        self.audio = PuzzleSound(self.notes, preset=24, simon_says=True)
 
         self.tile_size = (self.grid.tile_side_len, self.grid.tile_side_len)
 
