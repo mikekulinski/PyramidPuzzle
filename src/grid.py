@@ -86,6 +86,7 @@ class Grid(InstructionGroup):
 		self.place_tiles()
 		for loc, obj in self.objects:
 			self.place_object(loc, obj)
+		self.place_walls()
 
 	def calculate_dims(self):
 		# Finds the largest grid size that fits the current dimensions
@@ -98,6 +99,15 @@ class Grid(InstructionGroup):
 		self.pos = (
 			int((self.win_size[0] / 2) - self.grid_side_len / 2),
 			int(self.win_size[1] / 2 - self.grid_side_len / 2),
+		)
+
+		self.left_wall_pos = (
+			self.pos[0] * 3 / 4,
+			self.pos[1],
+		)
+		self.right_wall_pos = (
+			self.pos[0] + self.grid_side_len,
+			self.pos[1],
 		)
 
 	def place_tiles(self):
@@ -119,6 +129,14 @@ class Grid(InstructionGroup):
 
 		self.add(PopMatrix())
 
+	def place_walls(self):
+		# locate entire grid to position pos
+		self.add(Color(rgb=(1,1,1)))
+		self.left_wall = Rectangle(size=(self.pos[0]-self.left_wall_pos[0],self.grid_side_len), pos=self.left_wall_pos, source="./data/hieroglyphs.jpg")
+		self.add(self.left_wall)
+		self.right_wall = Rectangle(size=(self.pos[0]-self.left_wall_pos[0],self.grid_side_len), pos=self.right_wall_pos, source="./data/hieroglyphs.jpg")
+		self.add(self.right_wall)
+
 	def get_tile(self, pos):
 		x, y = pos
 		return self.tiles[y][x]
@@ -131,10 +149,13 @@ class Grid(InstructionGroup):
 		for row in self.tiles:
 			for tile in row:
 				self.remove(tile)
+		self.remove(self.left_wall)
+		self.remove(self.right_wall)
 
 		self.win_size = win_size
 
 		self.calculate_dims()
+		self.place_walls()
 		self.place_tiles()
 		for loc, obj in self.objects:
 			self.place_object(loc, obj)
