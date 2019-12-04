@@ -121,6 +121,10 @@ class DrumsPuzzle(Puzzle):
                             level=self.level + 1,
                             on_finished_puzzle=self.on_finished_puzzle,
                         )
+                    next_room_pos = (8 - player_pos[0], 8 - player_pos[1])
+                    self.objects[player_pos].other_room.character.move_player(
+                        next_room_pos
+                    )
                     return self.objects[player_pos].other_room
         elif button == Button.A:
             if player_pos in self.objects:

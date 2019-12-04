@@ -115,6 +115,10 @@ class CenterRoom(Puzzle):
                         self.objects[player_pos].other_room = obj.other_room(
                             prev_room=self, on_finished_puzzle=self.on_finished_puzzle
                         )
+                    next_room_pos = (8 - player_pos[0], 8 - player_pos[1])
+                    self.objects[player_pos].other_room.character.move_player(
+                        next_room_pos
+                    )
                     return self.objects[player_pos].other_room
 
     def on_update(self):

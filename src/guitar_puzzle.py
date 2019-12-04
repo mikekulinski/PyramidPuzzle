@@ -123,7 +123,7 @@ class GuitarPuzzle(Puzzle):
 
         self.simons = []
         for idx in range(5):
-            pos = (idx + 2, 4)
+            pos = (idx + 2, 3)
             simon = self.create_simon_says(pos, idx)
             self.simons.append(simon)
             self.objects[pos] = simon
@@ -163,6 +163,10 @@ class GuitarPuzzle(Puzzle):
                             level=self.level + 1,
                             on_finished_puzzle=self.on_finished_puzzle,
                         )
+                    next_room_pos = (8 - player_pos[0], 8 - player_pos[1])
+                    self.objects[player_pos].other_room.character.move_player(
+                        next_room_pos
+                    )
                     return self.objects[player_pos].other_room
 
         elif button == Button.A:

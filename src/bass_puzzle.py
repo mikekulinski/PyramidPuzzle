@@ -149,31 +149,41 @@ class BassPuzzle(Puzzle):
         self.audio.on_update()
 
     def on_player_input(self, button):
+        player_pos = self.character.grid_pos
         if button in [Button.UP, Button.DOWN, Button.LEFT, Button.RIGHT]:
             if self.game_over and self.is_game_over():
                 self.on_game_over()
 
+            x, y = button.value
+            new_pos = (player_pos[0] + x, player_pos[1] + y)
             self.character.change_direction(button.value)
 
-            x, y = button.value
-            cur_location = self.character.grid_pos
-            new_location = (cur_location[0] + x, cur_location[1] + y)
-            if new_location in self.objects:
-                if self.objects[new_location].moveable:
-                    self.move_block(new_location, x, y)
+            if new_pos in self.objects:
+                if self.objects[new_pos].moveable:
+                    self.move_block(new_pos, x, y)
 
-            self.character.move_player(new_location)
+            new_pos = (player_pos[0] + x, player_pos[1] + y)
+            self.character.move_player(new_pos)
+            player_pos = self.character.grid_pos
 
-            if self.character.grid_pos in self.objects:
-                obj = self.objects[
-                    (self.character.grid_pos[0], self.character.grid_pos[1])
-                ]
+            if player_pos in self.objects:
+                obj = self.objects[(player_pos[0], player_pos[1])]
                 if isinstance(obj, DoorTile):
-                    return obj.other_room
-            if new_location in self.string_position_end:
-                obj = self.objects[
-                    (self.character.grid_pos[0] - 8, self.character.grid_pos[1])
-                ]
+                    if not isinstance(obj.other_room, Puzzle):
+                        # instantiate class when we enter the door
+                        self.objects[player_pos].other_room = obj.other_room(
+                            prev_room=self,
+                            level=self.level + 1,
+                            on_finished_puzzle=self.on_finished_puzzle,
+                        )
+                    next_room_pos = (8 - player_pos[0], 8 - player_pos[1])
+                    self.objects[player_pos].other_room.character.move_player(
+                        next_room_pos
+                    )
+                    return self.objects[player_pos].other_room
+
+            if new_pos in self.string_position_end:
+                obj = self.objects[(player_pos[0] - 8, player_pos[1])]
 
                 self.play_string(obj)
             self.game_over = self.is_game_over()

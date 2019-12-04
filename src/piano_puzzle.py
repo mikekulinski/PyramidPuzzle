@@ -270,17 +270,19 @@ class PianoPuzzle(Puzzle):
         )
 
     def on_player_input(self, button):
+        player_pos = self.character.grid_pos
         if button in [Button.UP, Button.DOWN, Button.LEFT, Button.RIGHT]:
             move_possible = True
             x, y = button.value
-            cur_location = self.character.grid_pos
-            new_location = (cur_location[0] + x, cur_location[1] + y)
+            new_pos = (player_pos[0] + x, player_pos[1] + y)
             self.character.change_direction(button.value)
-            if new_location in self.objects:
-                if self.objects[new_location].moveable:
-                    move_possible = self.move_block(new_location, x, y)
+
+            if new_pos in self.objects:
+                if self.objects[new_pos].moveable:
+                    move_possible = self.move_block(new_pos, x, y)
             if move_possible:
-                self.character.move_player(new_location)
+                self.character.move_player(new_pos)
+                player_pos = self.character.grid_pos
             if self.character.grid_pos in self.objects:
                 if isinstance(self.objects[self.character.grid_pos], DoorTile):
                     if not isinstance(
@@ -290,6 +292,10 @@ class PianoPuzzle(Puzzle):
                         self.objects[self.character.grid_pos].other_room = self.objects[
                             self.character.grid_pos
                         ].other_room(self, self.level + 1, self.on_finished_puzzle)
+                    next_room_pos = (8 - player_pos[0], 8 - player_pos[1])
+                    self.objects[player_pos].other_room.character.move_player(
+                        next_room_pos
+                    )
                     return self.objects[self.character.grid_pos].other_room
         if button == Button.MINUS:
             self.play(actual=True)
