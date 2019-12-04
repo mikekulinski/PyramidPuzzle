@@ -307,5 +307,5 @@ class ResetButton(Tile):
     def __init__(self, size, pos):
         super().__init__(size, pos)
 
-        self.set_color(color=Tile.base_color, source="./data/reset_button.jpg")
+        self.set_color(color=Tile.base_color, source="./data/button_down.png")
 
