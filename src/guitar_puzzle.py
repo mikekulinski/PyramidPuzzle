@@ -79,10 +79,9 @@ class GuitarPuzzle(Puzzle):
             self.audio.set_notes(notes)
             self.audio.set_cb_ons(cb_ons)
             self.audio.set_cb_offs(cb_offs)
-            self.audio.set_on_finished(None)
+            self.audio.set_on_finished(self.change_to_user_turn)
             self.audio.note_seq.start_simon_says()
-            self.cpu_turn = False
-            self.user_sequence = []
+
         else:
             if idx == self.correct_sequence[len(self.user_sequence)]:
                 self.user_sequence.append(idx)
@@ -94,6 +93,10 @@ class GuitarPuzzle(Puzzle):
                 self.cpu_turn = True
                 self.play_game()
 
+    def change_to_user_turn(self):
+        self.cpu_turn = False
+        self.user_sequence = []
+
     def on_interact_mummy(self):
         self.user_sequence = []
         self.note_index = 1
@@ -101,11 +104,12 @@ class GuitarPuzzle(Puzzle):
         self.play_game()
 
     def on_interact_simon_says(self, idx):
-        self.audio.set_notes([self.notes[idx]])
-        self.audio.set_cb_ons([self.simons[idx].activate])
-        self.audio.set_cb_offs([self.simons[idx].deactivate])
-        self.audio.set_on_finished(self.simons[idx].on_finished_playing)
-        self.audio.note_seq.start_simon_says()
+        if not self.cpu_turn:
+            self.audio.set_notes([self.notes[idx]])
+            self.audio.set_cb_ons([self.simons[idx].activate])
+            self.audio.set_cb_offs([self.simons[idx].deactivate])
+            self.audio.set_on_finished(self.simons[idx].on_finished_playing)
+            self.audio.note_seq.start_simon_says()
 
     def create_objects(self):
         self.objects = {}
@@ -253,4 +257,3 @@ class Mummy(Tile):
 
     def interact(self):
         self.on_interact()
-
