@@ -56,12 +56,15 @@ class IntroRoom(Puzzle):
         pos = self.grid.grid_to_pixel((8, 4))
         pos = (pos[0] - 2 * self.grid.tile_side_len, pos[1])
 
-        self.objects[(8, 4)] = PyramidTile(size, pos, CenterRoom, "./data/pyramid.png")
+        self.objects[(7, 4)] = PyramidTile(size, pos, CenterRoom, "./data/pyramid.png")
         for i in range(9):
-            for j in range(5,9):
-                self.grid.get_tile((i,j)).set_color(color=Color(rgb=(.5, .8, .9)))
+            for j in range(5, 9):
+                sky_tile = self.grid.get_tile((i, j))
+                sky_tile.set_color(color=Color(rgb=(0.5, 0.8, 0.9)))
             for j in range(5):
-                self.grid.get_tile((i,j)).set_color(color=Tile.base_color, source="./data/sand3.png")
+                self.grid.get_tile((i, j)).set_color(
+                    color=Tile.base_color, source="./data/sand3.png"
+                )
 
         self.add(PushMatrix())
         self.add(Translate(*self.grid.pos))
@@ -77,7 +80,10 @@ class IntroRoom(Puzzle):
             cur_location = self.character.grid_pos
             new_location = (cur_location[0] + x, cur_location[1] + y)
             self.character.change_direction(button.value)
-            self.character.move_player(new_location)
+            if new_location[1] >= 5:
+                self.character.move_player(cur_location)
+            else:
+                self.character.move_player(new_location)
             if self.character.grid_pos in self.objects:
                 if isinstance(self.objects[self.character.grid_pos], PyramidTile):
                     return self.objects[self.character.grid_pos].other_room()
@@ -92,6 +98,11 @@ class IntroRoom(Puzzle):
         self.grid.on_layout(win_size)
         for pos, obj in self.objects.items():
             self.remove(obj)
+
+        # Never have walls for the intro room
+        for loc, wall in self.grid.walls.items():
+            self.grid.remove(wall)
+
         self.remove(self.instructions_window)
         self.remove(self.instructions_text)
 

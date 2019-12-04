@@ -94,11 +94,11 @@ class Grid(InstructionGroup):
         self.grid_side_len = min(
             self.win_size[0] - 2 * grid_margin, self.win_size[1] - 2 * grid_margin
         )
-        self.tile_side_len = self.grid_side_len / self.num_tiles
+        self.tile_side_len = self.grid_side_len / (self.num_tiles + 2)
 
         self.pos = (
-            int((self.win_size[0] / 2) - self.grid_side_len / 2),
-            int(self.win_size[1] / 2 - self.grid_side_len / 2),
+            int((self.win_size[0] / 2) - self.grid_side_len / 2) + self.tile_side_len,
+            int(self.win_size[1] / 2 - self.grid_side_len / 2) + self.tile_side_len,
         )
 
         self.left_wall_pos = (self.pos[0] * 3 / 4, self.pos[1])
@@ -117,7 +117,7 @@ class Grid(InstructionGroup):
                     size=(self.tile_side_len, self.tile_side_len),
                     pos=(c * self.tile_side_len, r * self.tile_side_len),
                 )
-                tile.set_color(Color(1,1,1), source="./data/tile2.png")
+                tile.set_color(Color(1, 1, 1), source="./data/sand1.png")
 
                 self.tiles[r].append(tile)
                 self.add(tile)
@@ -126,19 +126,43 @@ class Grid(InstructionGroup):
 
     def place_walls(self):
         # locate entire grid to position pos
-        self.add(Color(rgb=(1, 1, 1)))
-        self.left_wall = Rectangle(
-            size=(self.pos[0] - self.left_wall_pos[0], self.grid_side_len),
-            pos=self.left_wall_pos,
-            source="./data/hieroglyphs.jpg",
-        )
-        self.add(self.left_wall)
-        self.right_wall = Rectangle(
-            size=(self.pos[0] - self.left_wall_pos[0], self.grid_side_len),
-            pos=self.right_wall_pos,
-            source="./data/hieroglyphs.jpg",
-        )
-        self.add(self.right_wall)
+        self.add(PushMatrix())
+        self.add(Translate(*self.pos))
+
+        self.walls = {}
+        for i in range(9):
+            # Sides
+            self.walls[(-1, i)] = Wall(
+                (self.tile_side_len, self.tile_side_len), self.grid_to_pixel((-1, i))
+            )
+            self.walls[(9, i)] = Wall(
+                (self.tile_side_len, self.tile_side_len), self.grid_to_pixel((9, i))
+            )
+            self.walls[(i, -1)] = Wall(
+                (self.tile_side_len, self.tile_side_len), self.grid_to_pixel((i, -1))
+            )
+            self.walls[(i, 9)] = Wall(
+                (self.tile_side_len, self.tile_side_len), self.grid_to_pixel((i, 9))
+            )
+
+            # Corners
+            self.walls[(-1, -1)] = Wall(
+                (self.tile_side_len, self.tile_side_len), self.grid_to_pixel((-1, -1))
+            )
+            self.walls[(-1, 9)] = Wall(
+                (self.tile_side_len, self.tile_side_len), self.grid_to_pixel((-1, 9))
+            )
+            self.walls[(9, 9)] = Wall(
+                (self.tile_side_len, self.tile_side_len), self.grid_to_pixel((9, 9))
+            )
+            self.walls[(9, -1)] = Wall(
+                (self.tile_side_len, self.tile_side_len), self.grid_to_pixel((9, -1))
+            )
+
+        for loc, wall in self.walls.items():
+            self.add(wall)
+
+        self.add(PopMatrix())
 
     def get_tile(self, pos):
         x, y = pos
@@ -152,8 +176,8 @@ class Grid(InstructionGroup):
         for row in self.tiles:
             for tile in row:
                 self.remove(tile)
-        self.remove(self.left_wall)
-        self.remove(self.right_wall)
+        for loc, wall in self.walls.items():
+            self.remove(wall)
 
         self.win_size = win_size
 
@@ -162,3 +186,12 @@ class Grid(InstructionGroup):
         self.place_tiles()
         for loc, obj in self.objects:
             self.place_object(loc, obj)
+
+
+class Wall(Tile):
+    def __init__(self, size, pos):
+        super().__init__(size, pos)
+        self.moveable = False
+        self.passable = False
+        self.set_color(color=Tile.base_color, source="./data/brickfloor.png")
+
