@@ -163,7 +163,7 @@ class PianoPuzzle(Puzzle):
             if base_letter not in key_sig["b"]:
                 note.remove_flat()
 
-            if base_letter in key_sig["#"] and note.get_letter()[:-1] == base_letter + '#': 
+            if base_letter in key_sig["#"] and not (note.get_letter()[:-1] == base_letter + '#'): 
                 note.add_sharp()
             if base_letter in key_sig["b"]:
                 note.add_flat()
