@@ -2,6 +2,11 @@ from kivy.graphics import PopMatrix, PushMatrix, Translate, Color
 from kivy.core.window import Window
 from common.gfxutil import CLabelRect, CRectangle
 
+from common.audio import Audio
+from common.mixer import Mixer
+from common.wavegen import WaveGenerator
+from common.wavesrc import WaveFile
+
 from src.button import Button
 from src.grid import DoorTile, Tile
 from src.puzzle import Puzzle
@@ -14,6 +19,12 @@ class TreasureRoom(Puzzle):
         self.place_objects()
         self.blocks_placed = 0
         self.create_treasure_popup((Window.width, Window.height))
+
+        self.audio = Audio(2)
+        self.mixer = Mixer()
+        self.mixer.set_gain(0.2)
+        self.audio.set_generator(self.mixer)
+        self.wave_file_gen = WaveGenerator(WaveFile("./data/treasure_music.wav"))
 
     """ Mandatory Puzzle methods """
 
@@ -117,6 +128,7 @@ class TreasureRoom(Puzzle):
                     return self.objects[self.character.grid_pos].other_room
             if self.blocks_placed == 4:
                 self.on_game_over()
+                self.mixer.add(self.wave_file_gen)
 
 
     def create_treasure_popup(self, win_size):
@@ -146,7 +158,7 @@ class TreasureRoom(Puzzle):
 
 
     def on_update(self):
-        pass
+        self.audio.on_update()
 
     def on_layout(self, win_size):
         self.remove(self.character)
