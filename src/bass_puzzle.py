@@ -52,7 +52,7 @@ class BassPuzzle(Puzzle):
         self.create_objects()
         self.place_objects()
 
-        self.audio = PuzzleSound([])
+        self.audio = PuzzleSound([], bass_puzzle=True)
 
     """ Mandatory Puzzle methods """
 
@@ -197,7 +197,7 @@ class BassPuzzle(Puzzle):
         pitch = self.string_pitches[string_idx][fret_pos - 1]
         note = Note(480, pitch)
         self.audio.set_notes([note])
-        self.audio.toggle()
+        self.audio.note_seq.start_now()
 
         correct_string = string_idx == len(self.played_strings)
         correct_fret = self.current_frets[string_idx] == self.actual_frets[string_idx]
@@ -211,7 +211,7 @@ class BassPuzzle(Puzzle):
         pitch = self.string_pitches[string_idx][fret_pos - 1]
         note = Note(480, pitch)
         self.audio.set_notes([note])
-        self.audio.toggle()
+        self.audio.note_seq.start_now()
 
     def on_layout(self, win_size):
         self.remove(self.character)
@@ -266,4 +266,3 @@ class PlayButton(Tile):
         self.passable = True
         self.moveable = False
         self.set_color(color=Tile.base_color, source=self.icon_source)
-

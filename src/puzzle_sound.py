@@ -9,7 +9,9 @@ from common.synth import Synth
 
 
 class PuzzleSound(object):
-    def __init__(self, notes, bank=0, preset=0, loop=False, simon_says=False):
+    def __init__(
+        self, notes, bank=0, preset=0, loop=False, simon_says=False, bass_puzzle=False
+    ):
         super().__init__()
         self.audio = Audio(2)
         self.synth = Synth("./data/FluidR3_GM.sf2")
@@ -24,6 +26,7 @@ class PuzzleSound(object):
         self.preset = preset
         self.loop = loop
         self.simon_says = simon_says
+        self.bass_puzzle = bass_puzzle
 
         self.note_seq = NoteSequencer(
             sched=self.sched,
@@ -36,7 +39,7 @@ class PuzzleSound(object):
 
     def set_notes(self, notes):
         self.notes = notes
-        if self.simon_says:
+        if self.simon_says or self.bass_puzzle:
             self.note_seq = NoteSequencer(
                 sched=self.sched,
                 synth=self.synth,
@@ -118,7 +121,7 @@ class NoteSequencer(object):
         next_beat = quantize_tick_up(now, kTicksPerQuarter)
         self.cmd = self.sched.post_at_tick(self._note_on, next_beat)
 
-    def start_simon_says(self):
+    def start_now(self):
         if self.playing:
             return
 
@@ -130,7 +133,7 @@ class NoteSequencer(object):
 
         # post the first note on the next quarter-note:
         now = self.sched.get_tick()
-        self.cmd = self.sched.post_at_tick(self.simon_says_on, now + 240)
+        self.cmd = self.sched.post_at_tick(self.simon_says_on, now)
 
     def stop(self):
         if not self.playing:
@@ -187,11 +190,12 @@ class NoteSequencer(object):
             note = self.notes[self.idx]
             dur = note.get_dur()
             pitch = note.get_pitch()
-            cb_on = self.cb_ons[self.idx]
+            if self.cb_ons and self.idx < len(self.cb_ons):
+                cb_on = self.cb_ons[self.idx]
+                cb_on()
 
             # Play note and activate simon says tile
             self.synth.noteon(self.channel, pitch, self.vel)
-            cb_on()
 
             # Schedule note and tile to turn off
             now = self.sched.get_tick()
@@ -204,8 +208,9 @@ class NoteSequencer(object):
 
     def simon_says_off(self, tick, pitch):
         self.synth.noteoff(self.channel, pitch)
-        cb_off = self.cb_offs[self.idx]
-        cb_off()
+        if self.cb_offs and self.idx < len(self.cb_offs):
+            cb_off = self.cb_offs[self.idx]
+            cb_off()
         self.idx += 1
 
         now = self.sched.get_tick()

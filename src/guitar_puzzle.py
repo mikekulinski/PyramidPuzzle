@@ -80,7 +80,7 @@ class GuitarPuzzle(Puzzle):
             self.audio.set_cb_ons(cb_ons)
             self.audio.set_cb_offs(cb_offs)
             self.audio.set_on_finished(self.change_to_user_turn)
-            self.audio.note_seq.start_simon_says()
+            self.audio.note_seq.start_now()
 
         else:
             if idx == self.correct_sequence[len(self.user_sequence)]:
@@ -109,7 +109,7 @@ class GuitarPuzzle(Puzzle):
             self.audio.set_cb_ons([self.simons[idx].activate])
             self.audio.set_cb_offs([self.simons[idx].deactivate])
             self.audio.set_on_finished(self.simons[idx].on_finished_playing)
-            self.audio.note_seq.start_simon_says()
+            self.audio.note_seq.start_now()
 
     def create_objects(self):
         self.objects = {}
