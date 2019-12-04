@@ -1,7 +1,7 @@
 # common imports
 import numpy as np
 from kivy.graphics.instructions import InstructionGroup
-
+from kivy.graphics import Color
 from common.gfxutil import CRectangle
 from src.button import Button
 
@@ -12,7 +12,7 @@ class Character(InstructionGroup):
         self.puzzle = puzzle
 
         self.direction = (0, 1)
-        self.source = "./data/up_arrow.png"
+        self.source = "./data/character_down.png"
         self.grid_pos = (
             self.puzzle.grid.num_tiles // 2,
             self.puzzle.grid.num_tiles // 2,
@@ -37,18 +37,19 @@ class Character(InstructionGroup):
         self.sprite = CRectangle(
             cpos=self.pixel_pos, csize=self.size, source=self.source
         )
+        self.add(Color(1,1,1))
         self.add(self.sprite)
 
     def change_direction(self, direction):
         self.direction = direction
         if self.direction == Button.UP.value:
-            self.source = "./data/up_arrow.png"
+            self.source = "./data/character_up.png"
         elif self.direction == Button.DOWN.value:
-            self.source = "./data/down_arrow.png"
+            self.source = "./data/character_down.png"
         elif self.direction == Button.LEFT.value:
-            self.source = "./data/left_arrow.png"
+            self.source = "./data/character_left.png"
         elif self.direction == Button.RIGHT.value:
-            self.source = "./data/right_arrow.png"
+            self.source = "./data/character_right.png"
 
     def interact(self):
         in_front = (
