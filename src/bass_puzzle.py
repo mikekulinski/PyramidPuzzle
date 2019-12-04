@@ -16,158 +16,148 @@ from src.puzzle import Puzzle
 from src.puzzle_sound import Note, PuzzleSound
 
 
+string_pitches = [
+    [48, 49, 50, 51, 52, 53, 54],
+    [52, 53, 54, 55, 56, 57, 58],
+    [56, 57, 58, 59, 60, 61, 62],
+    [60, 61, 62, 63, 64, 65, 66],
+]
+
+string_heights = {0: [4], 1: [4, 5], 2: [3, 4, 5], 3: [3, 4, 5, 6]}
+
+correct_frets = {0: [3], 1: [7, 2], 2: [2, 6, 4], 3: [1, 7, 5, 3]}
+
+
 class BassPuzzle(Puzzle):
     def __init__(self, level=0, prev_room=None, on_finished_puzzle=None):
         super().__init__()
         self.level = level
         self.prev_room = prev_room
+        self.next_room = None
         self.on_finished_puzzle = on_finished_puzzle
-        self.fret_positions = [(1, 4), (1, 5), (1, 6), (1, 7)]
-        self.correct_blocks = [1, 2, 3, 4]
-        self.winning = {}  # stringidx : [fret in pos, string played]
-        self.string_position_start = [(0, 4), (0, 5), (0, 6), (0, 7)]
-        self.string_position_end = [(8, 4), (8, 5), (8, 6), (8, 7)]
-        self.string_pitches = [
-            [48, 49, 50, 51, 52, 53, 54],
-            [52, 53, 54, 55, 56, 57, 58],
-            [56, 57, 58, 59, 60, 61, 62],
-            [60, 61, 62, 63, 64, 65, 66],
-        ]
+
+        self.num_strings = level + 1
+        self.string_heights = string_heights[level]
+        self.string_pitches = string_pitches[: self.num_strings]
+
+        # Start the blocks all the way to the left every time
+        self.actual_frets = [1 for _ in range(self.num_strings)]
+        self.correct_frets = correct_frets[level]
+
+        self.played_strings = []
+
+        self.tile_size = (self.grid.tile_side_len, self.grid.tile_side_len)
+        self.fret_move_range = [1, 7]
+
+        self.create_objects()
         self.place_objects()
 
-    def block_interact(self, pos):
-        pass
+        self.audio = PuzzleSound([])
 
     """ Mandatory Puzzle methods """
 
     def is_game_over(self):
-        for pos, win in self.winning.items():
-            if not win[0] or not win[1]:
-                return False
+        return len(self.played_strings) == self.num_strings
 
-        self.on_finished_puzzle()
-        return True
-
-    def place_objects(self):
-        size = (self.grid.tile_side_len, self.grid.tile_side_len)
-
+    def create_objects(self):
+        self.objects = {}
         self.objects[(4, 0)] = DoorTile(
-            size, self.grid.grid_to_pixel((4, 0)), self.prev_room
+            self.tile_size, self.grid.grid_to_pixel((4, 0)), self.prev_room
         )
 
-        self.fsize = (self.grid.tile_side_len, self.grid.tile_side_len)
-        for stringp in range(len(self.string_position_start)):
-            self.winning[stringp] = [False, False]
+        self.strings = []
+        for i in range(self.num_strings):
+            # Create each string
+            height = self.string_heights[i]
+            self.strings.append(self.create_string(height, i))
 
-            pixel_pos_start = self.grid.grid_to_pixel(
-                self.string_position_start[stringp]
-            )
-            pixel_pos_end = self.grid.grid_to_pixel(self.string_position_end[stringp])
-            half_side = self.grid.tile_side_len // 2
-            pixel_pos_start = (
-                pixel_pos_start[0] + half_side,
-                pixel_pos_start[1] + half_side,
-            )
-            pixel_pos_end = (
-                pixel_pos_end[0] + half_side * 2,
-                pixel_pos_end[1] + half_side,
-            )
-            self.objects[self.string_position_start[stringp]] = BassString(
-                (pixel_pos_start, pixel_pos_end),
-                5,
-                (
-                    self.string_position_start[stringp],
-                    self.string_position_end[stringp],
-                ),
-                self.string_pitches[stringp],
-                stringp,
-            )
-        for f in range(len(self.fret_positions)):
-            fret = self.fret_positions[f]
-            pos = self.grid.grid_to_pixel(fret)
-            move_range = (self.string_position_start[f], self.string_position_end[f])
-            self.objects[fret] = FretBlock(
-                self.fsize,
-                fret,
-                pos,
-                self.block_interact,
-                move_range,
-                self.correct_blocks[f],
-                "./data/boulder.jpg",
-            )
+            # Create the corresponding fret
+            fret_x = self.actual_frets[i]
+            fret_y = self.string_heights[i]
+            grid_loc = (fret_x, fret_y)
+            self.objects[grid_loc] = self.create_fret(grid_loc, i)
 
+    def create_string(self, height, idx):
+        half_tile = self.grid.tile_side_len // 2
+
+        string_start = self.grid.grid_to_pixel((0, height))
+        string_start = (string_start[0] + half_tile, string_start[1] + half_tile)
+
+        string_end = self.grid.grid_to_pixel((8, height))
+        string_end = (string_end[0] + 2 * half_tile, string_end[1] + half_tile)
+
+        return BassString(string_start + string_end, idx)
+
+    def create_fret(self, grid_loc, string_idx):
+        pos = self.grid.grid_to_pixel(grid_loc)
+        return FretBlock(self.tile_size, grid_loc, pos, string_idx)
+
+    def place_objects(self):
         self.add(PushMatrix())
         self.add(Translate(*self.grid.pos))
+
+        for string in self.strings:
+            self.add(string)
 
         for pos, obj in self.objects.items():
             self.add(obj)
 
         self.add(PopMatrix())
 
-        self.audio = PuzzleSound([])
-
-    def move_block(self, new_location, x, y):
-        obj_loc = (new_location[0] + x, new_location[1] + y)
-        if Puzzle.is_valid_pos(self, obj_loc) and self.valid_block_move(
-            obj_loc, self.objects[new_location].move_range
-        ):
-            self.remove(self.objects[new_location])
-            obj = FretBlock(
-                self.fsize,
-                obj_loc,
-                self.grid.grid_to_pixel(obj_loc),
-                self.block_interact,
-                self.objects[new_location].move_range,
-                self.objects[new_location].correct_fret,
-                "./data/boulder.jpg",
-            )
-            del self.objects[new_location]
+    def move_block(self, block, new_pos):
+        if self.is_valid_pos(new_pos) and self.valid_block_move(block, new_pos):
+            self.remove(self.objects[block.grid_pos])
+            del [self.objects[block.grid_pos]]
 
             self.add(PushMatrix())
             self.add(Translate(*self.grid.pos))
+            obj = self.create_fret(new_pos, block.string_idx)
+            self.objects[new_pos] = obj
             self.add(obj)
             self.add(PopMatrix())
-            correct = obj.check_win()
-            self.objects[obj_loc] = obj
-            self.winning[obj_loc[1] - 4] = [correct, self.winning[obj_loc[1] - 4][1]]
 
-            self.update_string(obj_loc, obj.get_fret_pos())
+            self.actual_frets[block.string_idx] = new_pos[0]
 
-    # 	def check_correct_block(self):
-
-    def valid_block_move(self, pos, move_range):
-
-        if (
-            move_range[0][0] < pos[0] < move_range[1][0]
-            and move_range[0][1] <= pos[1] <= move_range[1][1]
-        ):
-            return True
-        else:
-            return False
+    def valid_block_move(self, block, pos):
+        same_height = pos[1] == block.grid_pos[1]
+        in_range = self.fret_move_range[0] <= pos[0] <= self.fret_move_range[1]
+        return same_height and in_range
 
     def on_update(self):
         self.audio.on_update()
+        if not self.game_over and self.is_game_over():
+            if self.level >= max(string_heights.keys()):
+                self.on_finished_puzzle()
+                self.on_game_over()
+            else:
+                if self.next_room is None:
+                    self.next_room = DoorTile(
+                        self.tile_size, self.grid.grid_to_pixel((4, 8)), BassPuzzle
+                    )
+                    self.objects[(4, 8)] = self.next_room
+                self.add(PushMatrix())
+                self.add(Translate(*self.grid.pos))
+                self.add(self.next_room)
+                self.add(PopMatrix())
 
     def on_player_input(self, button):
         player_pos = self.character.grid_pos
         if button in [Button.UP, Button.DOWN, Button.LEFT, Button.RIGHT]:
-            if self.game_over and self.is_game_over():
-                self.on_game_over()
-
             x, y = button.value
             new_pos = (player_pos[0] + x, player_pos[1] + y)
             self.character.change_direction(button.value)
 
             if new_pos in self.objects:
-                if self.objects[new_pos].moveable:
-                    self.move_block(new_pos, x, y)
+                block = self.objects[new_pos]
+                if block.moveable:
+                    new_block_pos = (new_pos[0] + x, new_pos[1] + y)
+                    self.move_block(block, new_block_pos)
 
-            new_pos = (player_pos[0] + x, player_pos[1] + y)
             self.character.move_player(new_pos)
             player_pos = self.character.grid_pos
 
             if player_pos in self.objects:
-                obj = self.objects[(player_pos[0], player_pos[1])]
+                obj = self.objects[player_pos]
                 if isinstance(obj, DoorTile):
                     if not isinstance(obj.other_room, Puzzle):
                         # instantiate class when we enter the door
@@ -182,41 +172,28 @@ class BassPuzzle(Puzzle):
                     )
                     return self.objects[player_pos].other_room
 
-            if new_pos in self.string_position_end:
-                obj = self.objects[(player_pos[0] - 8, player_pos[1])]
-
-                self.play_string(obj)
-            self.game_over = self.is_game_over()
+            elif player_pos[0] == 8 and player_pos[1] in self.string_heights:
+                print("Walking on the last column")
+                string_idx = self.string_heights.index(player_pos[1])
+                self.play_string(string_idx)
 
         elif button == Button.A:
             pass
             # self.character.interact()
 
-    def play_string(self, string):
-
-        stringidx = string.stringidx
-        if stringidx == 0:
-            self.winning[stringidx] = [
-                self.winning[stringidx][0],
-                self.winning[stringidx][0],
-            ]
-        else:
-            if self.winning[stringidx - 1][1]:
-                self.winning[stringidx] = [
-                    self.winning[stringidx][0],
-                    self.winning[stringidx - 1][1],
-                ]
-            else:
-                for s, w in self.winning.items():
-                    self.winning[s] == [w[0], False]
-
-        note = string.get_note()
+    def play_string(self, string_idx):
+        fret_pos = self.actual_frets[string_idx]
+        pitch = self.string_pitches[string_idx][fret_pos - 1]
+        note = Note(480, pitch)
         self.audio.set_notes([note])
         self.audio.toggle()
 
-    def update_string(self, block_loc, fret_pos):
-        string = self.objects[(0, block_loc[1])]
-        string.update_pitch(fret_pos)
+        correct_string = string_idx == len(self.played_strings)
+        correct_fret = self.actual_frets[string_idx] == self.correct_frets[string_idx]
+        if correct_string and correct_fret:
+            self.played_strings.append(string_idx)
+        else:
+            self.played_strings = []
 
     def on_layout(self, win_size):
         self.remove(self.character)
@@ -234,20 +211,15 @@ class BassPuzzle(Puzzle):
 
 
 class BassString(InstructionGroup):
-    def __init__(self, pos1_2, width, grid_start_end, pitches, idx):
+    def __init__(self, pos, idx):
         super().__init__()
-        self.passable = True
-        self.moveable = False
-        self.width = width
+        self.pos = pos
+        self.width = 5
 
-        self.grid_start, self.grid_end = grid_start_end
-        self.pos1, self.pos2 = pos1_2
+        self.idx = idx
 
-        self.stringidx = idx
-        self.pitches = pitches
-        self.update_pitch()
-
-        self.makeline()
+        self.add(Color(0, 0, 0))
+        self.add(Line(points=self.pos, width=self.width))
 
     def update_pitch(self, fret_pos=0):
         self.note = Note(480, self.pitches[fret_pos])
@@ -255,40 +227,15 @@ class BassString(InstructionGroup):
     def get_note(self):
         return self.note
 
-    def makeline(self):
-        self.add(Color(0, 0, 0))
-        poslist = list(self.pos1 + self.pos2)
-        self.add(Line(points=poslist, width=self.width))
-
 
 class FretBlock(Tile):
-    def __init__(
-        self, size, grid_pos, pos, on_interact, move_range, correct_fret, icon_source
-    ):
+    def __init__(self, size, grid_pos, pos, string_idx):
         super().__init__(size, pos)
-        self.move_range = move_range
         self.grid_pos = grid_pos
-        self.correct_fret = correct_fret
-        self.correct = (grid_pos[0] - 1) == correct_fret
+        self.string_idx = string_idx
 
-        self.on_interact = on_interact
-        self.icon_source = icon_source
+        self.icon_source = "./data/boulder.jpg"
         self.passable = False
         self.moveable = True
         self.set_color(color=Tile.base_color, source=self.icon_source)
-
-    # def move_block(self, new_pos):
-    #     print("trying to move")
-    #     self.pos = new_pos
-    #     self.set_pos(self.pos)
-    #     self.set_color(color=Tile.base_color, source=self.icon_source)
-
-    def check_win(self):
-        return self.correct
-
-    def get_fret_pos(self):
-        return self.grid_pos[0] - 1
-
-    def interact(self):
-        self.on_interact()
 
