@@ -256,7 +256,7 @@ class SequencerTile(Tile):
         self.beat_note = Note(480, self.instrument_pitch)
         self.topleft = topleft
         self.relative_pos = (beat_idx, instrument_idx)
-        self.set_color(color=SequencerTile.inactive_color)
+        self.set_color(color=Tile.base_color, source="./data/button_down.png")
 
     def on_button_press(self):
         # toggle audio mapped to it
@@ -267,15 +267,17 @@ class SequencerTile(Tile):
         # flip tile, toggle audio
         if self.beat_on:
             self.set_beats(rest=True)
-            self.set_color(color=SequencerTile.inactive_color)
+            self.set_color(
+                color=SequencerTile.base_color, source="./data/button_down.png"
+            )
         else:
             self.set_beats(rest=False)
-            self.set_color(SequencerTile.active_color)
+            self.set_color(SequencerTile.base_color, source="./data/button_up.png")
         self.beat_on = not self.beat_on
 
     def turn_off(self):
         self.set_beats(rest=True)
-        self.set_color(color=SequencerTile.inactive_color)
+        self.set_color(color=SequencerTile.base_color, source="./data/button_down.png")
         self.beat_on = False
 
     def set_beats(self, rest=True):

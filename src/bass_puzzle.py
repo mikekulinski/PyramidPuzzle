@@ -279,7 +279,7 @@ class PlayButton(Tile):
     def __init__(self, size, pos):
         super().__init__(size, pos)
 
-        self.icon_source = "./data/play_button.png"
+        self.icon_source = "./data/button_down.png"
         self.passable = True
         self.moveable = False
         self.set_color(color=Tile.base_color, source=self.icon_source)

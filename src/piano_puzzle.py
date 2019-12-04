@@ -259,17 +259,23 @@ class PianoPuzzle(Puzzle):
         )
 
     def place_objects(self):
-        rhythm_color = Color(rgba=(0, 0.5, 0.5, 1))
+        # rhythm_color = Color(rgba=(0, 0.5, 0.5, 1))
         for i in range(len(durations)):  # rhythm
-            self.grid.get_tile((i + 3, 2)).set_color(rhythm_color)
+            self.grid.get_tile((i + 3, 2)).set_color(
+                color=Tile.base_color, source="./data/trackv2.png"
+            )
 
-        pitch_color = Color(rgba=(0.2, 0.5, 1, 1))
+        # pitch_color = Color(rgba=(0.2, 0.5, 1, 1))
         for i in range(7):  # rhythm
-            self.grid.get_tile((i + 1, 7)).set_color(pitch_color)
+            self.grid.get_tile((i + 1, 7)).set_color(
+                color=Tile.base_color, source="./data/trackv2.png"
+            )
 
-        key_color = Color(rgba=(0.2, 0.5, 0, 1))
+        # key_color = Color(rgba=(0.2, 0.5, 0, 1))
         for i in range(len(key_names)):
-            self.grid.get_tile((i + 1, 5)).set_color(key_color)
+            self.grid.get_tile((i + 1, 5)).set_color(
+                color=Tile.base_color, source="./data/trackv2.png"
+            )
 
         self.add(PushMatrix())
         self.add(Translate(*self.grid.pos))
