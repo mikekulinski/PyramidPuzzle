@@ -117,7 +117,7 @@ class Grid(InstructionGroup):
                     size=(self.tile_side_len, self.tile_side_len),
                     pos=(c * self.tile_side_len, r * self.tile_side_len),
                 )
-                tile.set_color(Color(1,1,1), source="./data/tile2.png")
+                tile.set_color(Color(1,1,1), source="./data/brickfloor.png")
 
                 self.tiles[r].append(tile)
                 self.add(tile)
