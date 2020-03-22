@@ -1,2 +1,2 @@
 # PyramidPuzzle
-Pyramid puzzle name for interactive music systems
+Pyramid puzzle game for interactive music systems
